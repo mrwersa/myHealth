@@ -1,0 +1,7 @@
+{
+  "name": "myHealth",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

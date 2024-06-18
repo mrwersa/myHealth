@@ -1,0 +1,31 @@
+ion-header {
+  ion-toolbar {
+    --padding-start: 20px;
+    --padding-end: 20px;
+
+    ion-title {
+      display: flex;
+      align-items: center;
+
+      .logo {
+        height: 24px;
+        vertical-align: middle;
+        margin-right: 10px;
+      }
+    }
+
+    ion-buttons {
+      .avatar,
+      .avatar-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        overflow: hidden;
+        display: inline-block;
+        font-size: 32px;
+        color: #333333;
+      }
+    }
+  }
+}

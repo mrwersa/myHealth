@@ -1,16 +1,23 @@
-import { TestBed } from '@angular/core/testing';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
+import { Observable } from 'rxjs';
 
-import { FitbitService } from './fitbit.service';
+@Injectable({
+  providedIn: 'root'
+})
+export class FitbitService {
+  private tokenUri = environment.fitbitTokenUri;
+  private clientId = environment.fitbitClientId;
+  private clientSecret = environment.fitbitClientSecret;
 
-describe('FitbitService', () => {
-  let service: FitbitService;
+  constructor(private http: HttpClient) {}
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(FitbitService);
-  });
-
-  it('should be created', () => {
-    expect(service).toBeTruthy();
-  });
-});
+  getProfile(): Observable<any> {
+    // Assuming you have the access token logic handled somewhere
+    const accessToken = 'YOUR_ACCESS_TOKEN';
+    return this.http.get('https://api.fitbit.com/1/user/-/profile.json', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+  }
+}

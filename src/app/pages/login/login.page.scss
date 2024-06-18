@@ -1,0 +1,35 @@
+ion-content {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 !important;
+}
+
+.login-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: var(--login-wrapper-width);
+  max-width: var(--login-wrapper-max-width);
+  background-color: var(--login-wrapper-background-color);
+  padding: var(--login-wrapper-padding);
+  border-radius: var(--login-wrapper-border-radius);
+  box-shadow: var(--login-wrapper-box-shadow);
+}
+
+.login-logo img,
+.welcome-text,
+.instruction-text,
+.login-button {
+  width: var(--login-logo-width);
+  text-align: var(--login-text-align);
+  display: var(--login-text-display);
+}

@@ -1,0 +1,11 @@
+<div class="date-slider" [class.highlight]="isToday()">
+  <ion-button (click)="previousDay()">
+    <ion-icon name="arrow-back-circle"></ion-icon>
+  </ion-button>
+  <div class="date-text-container">
+    <span class="date-text" [class.today]="isToday()" [class.active]="isToday()">{{ displayDate() }}</span>
+  </div>
+  <ion-button *ngIf="!isToday()" (click)="nextDay()">
+    <ion-icon name="arrow-forward-circle"></ion-icon>
+  </ion-button>
+</div>

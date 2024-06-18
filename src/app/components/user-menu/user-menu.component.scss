@@ -1,0 +1,40 @@
+.menu-container {
+    background-color: var(--menu-bg-color);
+    padding: var(--menu-padding);
+    box-shadow: var(--menu-box-shadow);
+    border-radius: 4px;
+}
+
+.menu-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: var(--menu-padding);
+    margin: var(--menu-item-margin);
+    cursor: pointer;
+
+    ion-icon {
+        font-size: var(--menu-icon-size);
+        color: var(--menu-icon-color);
+        margin-right: 10px;
+    }
+
+    span {
+        font-size: var(--menu-font-size);
+        color: var(--menu-text-color);
+    }
+
+    &:hover {
+        background-color: var(--menu-hover-bg-color);
+    }
+}
+
+.divider {
+    height: 1px;
+    background-color: var(--divider-color);
+    margin: 10px 0;
+}

@@ -1,0 +1,27 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>
+      <img src="assets/img/logo.svg" alt="Logo" class="logo" />
+      MyHealth
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="openUserMenu($event)">
+        <ion-img [src]="userAvatar" *ngIf="userProfile.avatar; else defaultAvatar" class="avatar"></ion-img>
+        <ng-template #defaultAvatar>
+          <ion-icon name="person-circle-outline" class="avatar-icon"></ion-icon>
+        </ng-template>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-tabs>
+    <ion-tab-bar slot="bottom">
+      <ion-tab-button tab="overview">
+        <ion-icon name="heart-outline"></ion-icon>
+        <ion-label>Overview</ion-label>
+      </ion-tab-button>
+    </ion-tab-bar>
+  </ion-tabs>
+</ion-content>

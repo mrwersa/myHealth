@@ -1,0 +1,45 @@
+.date-slider {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background-color: var(--date-slider-bg-color, #f8f8f8);
+    border: 1px solid var(--date-slider-border-color, #e0e0e0);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+
+    .date-text-container {
+        flex-grow: 1;
+        text-align: center;
+        position: relative;
+    }
+
+    .date-text {
+        font-size: var(--date-slider-font-size, 18px);
+        color: var(--date-slider-font-color, #333);
+        font-weight: bold;
+        position: relative;
+
+        &.today {
+            &.active {
+                left: -25px; // Move the "Today" text 25px to the left from its centered position
+            }
+        }
+    }
+
+    ion-button::part(native) {
+        outline: none;
+        box-shadow: none;
+    }
+
+    ion-button:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    ion-icon {
+        font-size: 20px;
+        color: inherit;
+    }
+}

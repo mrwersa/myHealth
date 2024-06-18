@@ -1,0 +1,18 @@
+<div class="progress-circle" *ngIf="metric">
+  <svg viewBox="0 0 36 36">
+    <path class="bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0-31.831" />
+    <path class="meter" [attr.stroke-dasharray]="metric.value / metric.goal * 100 + ', 100'"
+      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0-31.831" />
+    <path *ngIf="metric.value > metric.goal" class="overlap"
+      [attr.stroke-dasharray]="(metric.value - metric.goal) / metric.goal * 100 + ', 100'"
+      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0-31.831" />
+  </svg>
+  <div class="icon-container">
+    <ion-icon [name]="metric.icon"></ion-icon>
+  </div>
+  <!-- Tick mark for goal achievement -->
+  <div *ngIf="metric?.goalAchieved" class="tick-mark">
+    <ion-icon name="checkmark-circle"></ion-icon>
+  </div>
+</div>
+<div class="metric-value" *ngIf="metric">{{ metric.value }} {{ metric.unit }}</div>

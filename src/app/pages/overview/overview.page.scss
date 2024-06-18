@@ -1,0 +1,57 @@
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--ion-color-light);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.metric-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.metric-title {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  flex-grow: 1;
+  margin: 0 20px;
+}
+
+ion-button::part(native) {
+  outline: none;
+  box-shadow: none;
+}
+
+ion-button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+ion-icon {
+  font-size: 20px;
+  color: inherit;
+}
+
+.metric-card-content {
+  display: flex;
+  justify-content: center;
+}
+
+.metric-info-card {
+  background-color: var(--ion-color-light);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.metric-info-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}

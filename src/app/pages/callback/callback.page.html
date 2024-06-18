@@ -1,0 +1,12 @@
+<ion-content>
+  <div class="spinner-container" *ngIf="processing">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+  <ion-text *ngIf="error" color="danger">
+    <h2>Error</h2>
+    <p>Authentication failed. Redirecting to login...</p>
+  </ion-text>
+  <ion-text *ngIf="!processing && !error">
+    <p>Authentication successful. Redirecting...</p>
+  </ion-text>
+</ion-content>

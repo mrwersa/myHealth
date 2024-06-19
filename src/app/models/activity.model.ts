@@ -3,6 +3,14 @@ export interface Distance {
   distance: number;
 }
 
+export interface HeartRateZone {
+  name: string;
+  min: number;
+  max: number;
+  minutes: number;
+  caloriesOut: number;
+}
+
 export interface ActivitySummary {
   steps: number;
   caloriesOut: number;
@@ -12,15 +20,15 @@ export interface ActivitySummary {
   lightlyActiveMinutes: number;
   sedentaryMinutes: number;
   veryActiveMinutes: number;
-  elevation?: number;
-  floors?: number;
-  heartRateZones?: HeartRateZone[];
-  restingHeartRate?: number;
-  activityCalories?: number;
-  caloriesBMR?: number;
-  marginalCalories?: number;
-  useEstimation?: boolean;
-  sleepMinutes?: number;
+  elevation: number; // Added as required
+  floors: number; // Added as required
+  heartRateZones: HeartRateZone[];
+  restingHeartRate: number; // Changed to required
+  activityCalories: number; // Added as required
+  caloriesBMR: number; // Added as required
+  marginalCalories: number; // Added as required
+  useEstimation: boolean; // Changed to required
+  sleepMinutes: number; // Changed to required
 }
 
 export interface ActivityGoals {
@@ -28,8 +36,9 @@ export interface ActivityGoals {
   caloriesOut: number;
   distance: number;
   activeMinutes: number;
-  floors?: number;
-  sleep? : number;
+  floors: number; // Changed to required
+  sleep: number; // Changed to required
+  restingHeartRate?: number; // Assuming there is a goal for resting heart rate
 }
 
 export interface ActivityData {
@@ -46,12 +55,4 @@ export interface ActivityDetail {
   goalAchieved: boolean;
   details: string;
   type: string;
-}
-
-export interface HeartRateZone {
-  name: string;
-  min: number;
-  max: number;
-  minutes: number;
-  caloriesOut: number;
 }

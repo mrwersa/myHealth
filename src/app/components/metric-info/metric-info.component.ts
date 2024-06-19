@@ -1,10 +1,10 @@
-import { Component, Input, OnInit, ViewChild, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ViewChild, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartOptions, ChartType, ChartData } from 'chart.js';
 import { IonCard, IonCardContent } from '@ionic/angular/standalone';
 import { FitbitService } from '../../services/fitbit.service';
 import { ActivityData, Distance, HeartRateZone } from '../../models/activity.model';
-import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
-import { BaseChartDirective } from 'ng2-charts';
 
 @Component({
   selector: 'app-metric-info',
@@ -13,35 +13,66 @@ import { BaseChartDirective } from 'ng2-charts';
   standalone: true,
   imports: [CommonModule, IonCard, IonCardContent, BaseChartDirective]
 })
-export class MetricInfoComponent implements OnInit, OnChanges {
+export class MetricInfoComponent implements OnChanges, OnInit {
   @Input() details!: string;
   @Input() metricType!: string;
   @Input() selectedDate!: string;
-  detailedData: any[] = [];
-  averageLastWeek!: number;
-  averageLastMonth!: number;
-  totalLastMonth!: number;
-  bestMetricValue!: number;
-  heartRateZones: HeartRateZone[] = [];
+  @ViewChild(BaseChartDirective) chart!: BaseChartDirective;
 
-  @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
-
-  // Chart configuration
-  public barChartOptions: ChartConfiguration['options'] = {
+  barChartOptions: ChartOptions = {
     responsive: true,
-    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      annotation: {
+        annotations: {
+          goalLine: {
+            type: 'line',
+            scaleID: 'y',
+            value: 0, // this will be updated dynamically
+            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--goal-line-color'),
+            borderWidth: 2,
+            borderDash: [5, 5],
+            label: {
+              content: 'Goal',
+              position: 'end',
+              display: true
+            }
+          }
+        }
+      }
+    },
     scales: {
-      x: {},
-      y: { beginAtZero: true }
+      y: {
+        beginAtZero: true
+      }
     }
   };
-  public barChartType: ChartType = 'bar';
-  public barChartData: ChartData<'bar'> = {
+
+  barChartType: ChartType = 'bar';
+  barChartLabels: string[] = [];
+  barChartData: ChartData<'bar'> = {
     labels: [],
     datasets: [
-      { data: [], label: 'Value' }
+      {
+        data: [],
+        backgroundColor: (context: any) => {
+          const value = context.raw;
+          const goalValue = this.goal;
+          return value >= goalValue ? getComputedStyle(document.documentElement).getPropertyValue('--achieved-color') : getComputedStyle(document.documentElement).getPropertyValue('--not-achieved-color');
+        }
+      }
     ]
   };
+  heartRateZones: HeartRateZone[] = [];
+
+  averageLastWeek: number = 0;
+  averageLastMonth: number = 0;
+  totalLastMonth: number = 0;
+  bestMetric: number = 0;
+  goal: number = 0;
+  metricValue: number = 0;
 
   constructor(private fitbitService: FitbitService) { }
 
@@ -50,10 +81,7 @@ export class MetricInfoComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['metricType'] && !changes['metricType'].firstChange) {
-      this.fetchDetailedData();
-    }
-    if (changes['selectedDate'] && !changes['selectedDate'].firstChange) {
+    if ((changes['metricType'] && !changes['metricType'].firstChange) || (changes['selectedDate'] && !changes['selectedDate'].firstChange)) {
       this.fetchDetailedData();
     }
   }
@@ -63,125 +91,111 @@ export class MetricInfoComponent implements OnInit, OnChanges {
     const startDateWeek = new Date(new Date(endDate).setDate(new Date(endDate).getDate() - 7)).toISOString().split('T')[0];
     const startDateMonth = new Date(new Date(endDate).setMonth(new Date(endDate).getMonth() - 1)).toISOString().split('T')[0];
 
-    this.fitbitService.fetchActivityTimeSeries(this.metricType, startDateWeek, endDate).subscribe((data: any[]) => {
-      this.detailedData = data;
+    this.fitbitService.fetchActivityTimeSeries(this.metricType, startDateWeek, endDate).subscribe((data: ActivityData[]) => {
+      this.updateChart(data);
       this.averageLastWeek = this.calculateAverage(data);
-      this.updateChartData(data, 'lastWeek');
     });
 
-    this.fitbitService.fetchActivityTimeSeries(this.metricType, startDateMonth, endDate).subscribe((data: any[]) => {
+    this.fitbitService.fetchActivityTimeSeries(this.metricType, startDateMonth, endDate).subscribe((data: ActivityData[]) => {
       this.averageLastMonth = this.calculateAverage(data);
       this.totalLastMonth = this.calculateTotal(data);
-      this.bestMetricValue = this.calculateBestMetricValue(data);
-      this.updateChartData(data, 'lastMonth');
+      this.bestMetric = this.calculateBest(data);
+      this.goal = this.getGoalValue(data[0]);
+      this.metricValue = this.getMetricValue(data[0]);
+
+      if (this.metricType === 'restingHeartRate') {
+        this.heartRateZones = data[0].summary.heartRateZones || [];
+      } else {
+        this.heartRateZones = [];
+      }
+
+      if (this.barChartOptions.plugins?.annotation?.annotations) {
+        (this.barChartOptions.plugins.annotation.annotations as any).goalLine.value = this.goal;
+      }
     });
+  }
 
-    if (this.metricType === 'heartRateZones') {
-      this.fitbitService.fetchActivityTimeSeries('heartRateZones', startDateMonth, endDate).subscribe((data: any[]) => {
-        this.heartRateZones = data.map(entry => entry.summary?.heartRateZones || []);
-      });
+  updateChart(data: ActivityData[]) {
+    this.barChartLabels = data.map((entry, index) => `Day ${index + 1}`);
+    this.barChartData = {
+      labels: this.barChartLabels,
+      datasets: [
+        {
+          data: data.map(entry => this.getMetricValue(entry)),
+          backgroundColor: (context: any) => {
+            const value = context.raw;
+            const goalValue = this.goal;
+            return value >= goalValue ? getComputedStyle(document.documentElement).getPropertyValue('--achieved-color') : getComputedStyle(document.documentElement).getPropertyValue('--not-achieved-color');
+          }
+        }
+      ]
+    };
+    if (this.chart) {
+      this.chart.update();
     }
   }
 
-  calculateAverage(data: any[]): number {
-    const total = data.reduce((sum, entry) => sum + (entry.summary?.[this.metricType] || 0), 0);
-    return total / data.length;
+  calculateAverage(data: ActivityData[]): number {
+    const total = data.reduce((sum, entry) => sum + this.getMetricValue(entry), 0);
+    return parseFloat((total / data.length).toFixed(2));
   }
 
-  calculateTotal(data: any[]): number {
-    return data.reduce((sum, entry) => sum + (entry.summary?.[this.metricType] || 0), 0);
+  calculateTotal(data: ActivityData[]): number {
+    const total = data.reduce((sum, entry) => sum + this.getMetricValue(entry), 0);
+    return parseFloat(total.toFixed(2));
   }
 
-  calculateBestMetricValue(data: any[]): number {
-    return Math.max(...data.map(entry => entry.summary?.[this.metricType] || 0));
+  calculateBest(data: ActivityData[]): number {
+    return Math.max(...data.map(entry => this.getMetricValue(entry)));
   }
 
-  updateChartData(data: any[], period: string) {
-    if (period === 'lastWeek' || period === 'lastMonth') {
-      this.barChartData.labels = data.map(entry => entry.date);
-      this.barChartData.datasets[0].data = data.map(entry => entry.summary?.[this.metricType] || 0);
+  getGoalValue(data: ActivityData): number {
+    const goalValue = data.goals[this.metricType as keyof ActivityData['goals']];
+    return goalValue !== undefined ? goalValue : 0;
+  }
+
+  getMetricValue(data: ActivityData): number {
+    const metricValue = data.summary[this.metricType as keyof ActivityData['summary']];
+    if (Array.isArray(metricValue)) {
+      if (this.metricType === 'distance') {
+        return (metricValue as Distance[]).reduce((sum, distance) => sum + distance.distance, 0);
+      }
+      return 0;
     }
-    this.chart?.update();
-  }
-
-  getMetricLabel(metricType: string): string {
-    const labels: { [key: string]: string } = {
-      steps: 'Steps',
-      caloriesOut: 'Calories Burned',
-      distances: 'Distance (km)',
-      activeMinutes: 'Active Minutes',
-      fairlyActiveMinutes: 'Fairly Active Minutes',
-      lightlyActiveMinutes: 'Lightly Active Minutes',
-      sedentaryMinutes: 'Sedentary Minutes',
-      veryActiveMinutes: 'Very Active Minutes',
-      elevation: 'Elevation (m)',
-      floors: 'Floors',
-      heartRateZones: 'Heart Rate Zones',
-      restingHeartRate: 'Resting Heart Rate (bpm)',
-      activityCalories: 'Activity Calories',
-      caloriesBMR: 'Calories BMR',
-      marginalCalories: 'Marginal Calories',
-      useEstimation: 'Use Estimation',
-      sleepMinutes: 'Sleep Minutes'
-    };
-    return labels[metricType] || 'Value';
-  }
-
-  getMetricUnit(metricType: string): string {
-    const units: { [key: string]: string } = {
-      steps: 'steps',
-      caloriesOut: 'calories',
-      distances: 'km',
-      activeMinutes: 'min',
-      fairlyActiveMinutes: 'min',
-      lightlyActiveMinutes: 'min',
-      sedentaryMinutes: 'min',
-      veryActiveMinutes: 'min',
-      elevation: 'm',
-      floors: 'floors',
-      heartRateZones: 'zones',
-      restingHeartRate: 'bpm',
-      activityCalories: 'calories',
-      caloriesBMR: 'calories',
-      marginalCalories: 'calories',
-      useEstimation: 'boolean',
-      sleepMinutes: 'min'
-    };
-    return units[metricType] || 'units';
-  }
-
-  getMetricTitle(metricType: string): string {
-    const titles: { [key: string]: string } = {
-      steps: 'Steps',
-      caloriesOut: 'Calories Burned',
-      distances: 'Distance',
-      activeMinutes: 'Active Minutes',
-      fairlyActiveMinutes: 'Fairly Active Minutes',
-      lightlyActiveMinutes: 'Lightly Active Minutes',
-      sedentaryMinutes: 'Sedentary Minutes',
-      veryActiveMinutes: 'Very Active Minutes',
-      elevation: 'Elevation',
-      floors: 'Floors',
-      heartRateZones: 'Heart Rate Zones',
-      restingHeartRate: 'Resting Heart Rate',
-      activityCalories: 'Activity Calories',
-      caloriesBMR: 'Calories BMR',
-      marginalCalories: 'Marginal Calories',
-      useEstimation: 'Use Estimation',
-      sleepMinutes: 'Sleep Minutes'
-    };
-    return titles[metricType] || 'Metric';
+    return metricValue !== undefined && typeof metricValue === 'number' ? metricValue : 0;
   }
 
   formatNumber(value: number, metricType: string): string {
-    if (metricType === 'distances') {
-      return value.toFixed(2);
-    } else if (metricType === 'elevation') {
-      return value.toFixed(1);
-    } else if (metricType.includes('Minutes')) {
-      return value.toFixed(0);
-    } else {
-      return value.toLocaleString();
+    if (metricType === 'steps') {
+      return Math.round(value).toString();
     }
+    if (metricType === 'distance') {
+      return value.toFixed(2);
+    }
+    return value.toFixed(2);
+  }
+
+  getUnit(metricType: string): string {
+    const units: { [key: string]: string } = {
+      steps: 'steps',
+      caloriesOut: 'cal',
+      distance: 'km',
+      activeMinutes: 'min',
+      sleepMinutes: 'h',
+      restingHeartRate: 'bpm'
+    };
+    return units[metricType] || '';
+  }
+
+  getFormattedMetricType(): string {
+    const formattedMetricTypes: { [key: string]: string } = {
+      steps: 'Steps',
+      caloriesOut: 'Calories Out',
+      distance: 'Distance',
+      activeMinutes: 'Active Minutes',
+      sleepMinutes: 'Sleep Minutes',
+      restingHeartRate: 'Resting Heart Rate'
+    };
+    return formattedMetricTypes[this.metricType] || this.metricType;
   }
 }

@@ -3,10 +3,10 @@
     align-items: center;
     justify-content: space-between;
     padding: 15px;
-    background-color: var(--date-slider-bg-color, #f8f8f8);
-    border: 1px solid var(--date-slider-border-color, #e0e0e0);
+    background-color: var(--ion-color-light);
+    border: 1px solid var(--ion-color-medium);
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
 
     .date-text-container {
@@ -16,8 +16,8 @@
     }
 
     .date-text {
-        font-size: var(--date-slider-font-size, 18px);
-        color: var(--date-slider-font-color, #333);
+        font-size: 18px;
+        color: var(--ion-color-dark);
         font-weight: bold;
         position: relative;
 

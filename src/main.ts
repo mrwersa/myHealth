@@ -4,17 +4,15 @@ import { RouteReuseStrategy, provideRouter, withPreloading, PreloadAllModules } 
 import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
-// Register Swiper elements
-import { register } from 'swiper/element/bundle';
-register();
-
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { environment } from './environments/environment';
 
 // Register Chart.js components
 import { Chart, registerables } from 'chart.js';
-Chart.register(...registerables);
+import annotationPlugin from 'chartjs-plugin-annotation';
+
+Chart.register(...registerables, annotationPlugin);
 
 if (environment.production) {
   enableProdMode();

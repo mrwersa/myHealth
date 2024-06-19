@@ -1,8 +1,16 @@
+:root {
+    --menu-bg-color: #1e1e1e;
+    --menu-text-color: #f0f0f0;
+    --menu-icon-color: #ffffff;
+    --menu-hover-bg-color: #2e2e2e;
+    --divider-color: #555555;
+}
+
 .menu-container {
     background-color: var(--menu-bg-color);
-    padding: var(--menu-padding);
-    box-shadow: var(--menu-box-shadow);
-    border-radius: 4px;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .menu-list {
@@ -13,28 +21,29 @@
 .menu-item {
     display: flex;
     align-items: center;
-    padding: var(--menu-padding);
-    margin: var(--menu-item-margin);
+    padding: 12px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
     cursor: pointer;
+}
 
-    ion-icon {
-        font-size: var(--menu-icon-size);
-        color: var(--menu-icon-color);
-        margin-right: 10px;
-    }
+.menu-item ion-icon {
+    font-size: 24px;
+    color: var(--menu-icon-color);
+    margin-right: 12px;
+}
 
-    span {
-        font-size: var(--menu-font-size);
-        color: var(--menu-text-color);
-    }
+.menu-item span {
+    font-size: 16px;
+    color: var(--menu-text-color);
+}
 
-    &:hover {
-        background-color: var(--menu-hover-bg-color);
-    }
+.menu-item:hover {
+    background-color: var(--menu-hover-bg-color);
 }
 
 .divider {
     height: 1px;
     background-color: var(--divider-color);
-    margin: 10px 0;
+    margin: 12px 0;
 }

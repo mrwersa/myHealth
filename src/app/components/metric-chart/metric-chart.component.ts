@@ -10,7 +10,7 @@ import { ActivityDetail } from '../../models/activity.model';
   templateUrl: './metric-chart.component.html',
   styleUrls: ['./metric-chart.component.scss'],
   standalone: true,
-  imports: [IonIcon, CommonModule]
+  imports: [IonIcon, CommonModule],
 })
 export class MetricChartComponent implements OnInit, OnChanges {
   @Input() metric!: ActivityDetail;

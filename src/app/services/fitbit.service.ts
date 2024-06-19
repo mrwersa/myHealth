@@ -4,7 +4,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
-import { ActivityDetail, ActivityData, Distance, HeartRateZone } from '../models/activity.model';
+import { ActivityDetail, ActivityData } from '../models/activity.model';
 import { faker } from '@faker-js/faker';
 
 @Injectable({
@@ -24,42 +24,33 @@ export class FitbitService {
     });
   }
 
-  private generateMockDistances(): Distance[] {
-    return [
-      { activity: 'total', distance: faker.datatype.float({ min: 5, max: 15 }) },
-      { activity: 'tracker', distance: faker.datatype.float({ min: 2, max: 10 }) },
-      { activity: 'loggedActivities', distance: faker.datatype.float({ min: 1, max: 5 }) }
-    ];
-  }
-
-  private generateMockHeartRateZones(): HeartRateZone[] {
-    return [
-      { name: 'Fat Burn', min: 120, max: 140, minutes: faker.datatype.number({ min: 10, max: 60 }), caloriesOut: faker.datatype.number({ min: 100, max: 300 }) },
-      { name: 'Cardio', min: 140, max: 160, minutes: faker.datatype.number({ min: 5, max: 30 }), caloriesOut: faker.datatype.number({ min: 50, max: 200 }) },
-      { name: 'Peak', min: 160, max: 180, minutes: faker.datatype.number({ min: 1, max: 10 }), caloriesOut: faker.datatype.number({ min: 20, max: 100 }) }
-    ];
-  }
-
   private generateMockData(): ActivityData {
     return {
       summary: {
         steps: faker.datatype.number({ min: 5000, max: 12000 }),
         caloriesOut: faker.datatype.number({ min: 1500, max: 3000 }),
-        distances: this.generateMockDistances(),
+        distances: [
+          { activity: 'total', distance: faker.datatype.float({ min: 5, max: 15 }) },
+          { activity: 'tracker', distance: faker.datatype.float({ min: 2, max: 10 }) }
+        ],
         activeMinutes: faker.datatype.number({ min: 50, max: 200 }),
-        fairlyActiveMinutes: faker.datatype.number({ min: 20, max: 100 }),
-        lightlyActiveMinutes: faker.datatype.number({ min: 30, max: 150 }),
+        fairlyActiveMinutes: faker.datatype.number({ min: 10, max: 50 }),
+        lightlyActiveMinutes: faker.datatype.number({ min: 20, max: 100 }),
         sedentaryMinutes: faker.datatype.number({ min: 500, max: 1000 }),
-        veryActiveMinutes: faker.datatype.number({ min: 10, max: 50 }),
-        elevation: faker.datatype.float({ min: 10, max: 50 }),
-        floors: faker.datatype.number({ min: 1, max: 20 }),
-        heartRateZones: this.generateMockHeartRateZones(),
+        veryActiveMinutes: faker.datatype.number({ min: 30, max: 120 }),
+        elevation: faker.datatype.float({ min: 5, max: 20 }),
+        floors: faker.datatype.number({ min: 5, max: 20 }),
+        heartRateZones: [
+          { name: 'Fat Burn', min: 93, max: 130, minutes: faker.datatype.number({ min: 20, max: 60 }), caloriesOut: faker.datatype.number({ min: 100, max: 300 }) },
+          { name: 'Cardio', min: 130, max: 160, minutes: faker.datatype.number({ min: 10, max: 40 }), caloriesOut: faker.datatype.number({ min: 200, max: 500 }) },
+          { name: 'Peak', min: 160, max: 190, minutes: faker.datatype.number({ min: 5, max: 20 }), caloriesOut: faker.datatype.number({ min: 300, max: 600 }) }
+        ],
         restingHeartRate: faker.datatype.number({ min: 60, max: 80 }),
-        activityCalories: faker.datatype.number({ min: 1000, max: 2000 }),
-        caloriesBMR: faker.datatype.number({ min: 1000, max: 2000 }),
-        marginalCalories: faker.datatype.number({ min: 100, max: 500 }),
-        useEstimation: faker.datatype.boolean(),
-        sleepMinutes: faker.datatype.number({ min: 300, max: 600 })
+        activityCalories: faker.datatype.number({ min: 2000, max: 3000 }),
+        caloriesBMR: faker.datatype.number({ min: 1200, max: 1800 }),
+        marginalCalories: faker.datatype.number({ min: 100, max: 300 }),
+        sleepMinutes: faker.datatype.number({ min: 300, max: 600 }),
+        useEstimation: faker.datatype.boolean()
       },
       goals: {
         steps: 10000,
@@ -67,7 +58,8 @@ export class FitbitService {
         distance: 8,
         activeMinutes: 30,
         floors: 10,
-        sleep: 480
+        sleep: 480,
+        restingHeartRate: 70
       }
     };
   }
@@ -86,12 +78,10 @@ export class FitbitService {
       const url = `${environment.fitbitApiBaseUrl}/activities/date/${date}.json`;
 
       return this.http.get<any>(url, { headers }).pipe(
-        map(response => {
-          return {
-            summary: response.summary,
-            goals: response.goals
-          };
-        }),
+        map(response => ({
+          summary: response.summary,
+          goals: response.goals
+        })),
         catchError(err => {
           console.error('Error fetching activity and goals:', err);
           return throwError(() => new Error('Failed to fetch activity and goals'));

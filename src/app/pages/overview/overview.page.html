@@ -1,7 +1,9 @@
 <ion-content class="ion-padding">
-  <app-date-slider (dateChange)="onDateChange($event)"></app-date-slider>
+  <div class="date-slider-container">
+    <app-date-slider (dateChange)="onDateChange($event)"></app-date-slider>
+  </div>
 
-  <div class="metric-card" *ngIf="currentMetric">
+  <div class="metric-card">
     <div class="metric-card-header">
       <ion-button (click)="prevMetric()" [disabled]="currentMetricIndex === 0">
         <ion-icon name="arrow-back-circle"></ion-icon>
@@ -12,16 +14,15 @@
       </ion-button>
     </div>
     <div class="metric-card-content">
-      <app-metric-chart [metric]="currentMetric" [selectedDate]="selectedDate">
-        <!-- Pass selectedDate to metric-chart -->
-      </app-metric-chart>
+      <app-metric-chart [metric]="currentMetric"></app-metric-chart>
     </div>
   </div>
 
-  <div class="metric-info-card" *ngIf="currentMetric">
-    <div class="metric-info-title">Details</div>
-    <app-metric-info [details]="currentMetric.details || 'No details available for this metric.'"
-      [metricType]="currentMetric.type" [selectedDate]="selectedDate"> <!-- Pass selectedDate to metric-info -->
-    </app-metric-info>
+  <div class="metric-info-card">
+    <div class="metric-info-title">Report</div>
+    <div class="metric-info-content">
+      <app-metric-info [details]="currentMetric.details || 'No details available for this metric.'"
+        [metricType]="currentMetric.type" [selectedDate]="selectedDate"></app-metric-info>
+    </div>
   </div>
 </ion-content>

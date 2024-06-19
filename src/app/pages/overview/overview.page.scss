@@ -1,3 +1,17 @@
+ion-content {
+  --ion-padding-top: 0px;
+}
+
+.date-slider-container {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--ion-background-color);
+  padding-top: var(--ion-safe-area-top);
+  margin-bottom: 10px;
+  /* Adjust if needed */
+}
+
 .metric-card {
   display: flex;
   flex-direction: column;
@@ -45,13 +59,28 @@ ion-icon {
 
 .metric-info-card {
   background-color: var(--ion-color-light);
-  padding: 20px;
+  padding: 0;
+  /* Remove padding to give more space for the chart */
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  /* Added to give some gap above the details section */
 }
 
 .metric-info-title {
   font-size: 18px;
   font-weight: bold;
   margin-bottom: 10px;
+  text-align: center;
+  /* Centering the title */
+}
+
+.metric-info-content {
+  padding: 10px;
+  /* Adjust to add some spacing inside the card */
+}
+
+.metric-info-card canvas {
+  margin-left: auto;
+  margin-right: auto;
 }

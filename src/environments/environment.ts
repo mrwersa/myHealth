@@ -7,5 +7,5 @@ export const environment = {
   fitbitTokenUri: 'https://api.fitbit.com/oauth2/token',
   fitbitApiBaseUrl: 'https://api.fitbit.com/1/user/-',
   fitbitScopes: 'activity profile sleep nutrition heartrate',
-  test: true
+  test: false
 };

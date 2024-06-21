@@ -154,26 +154,57 @@ export class MetricInfoComponent implements OnChanges, OnInit {
     return goalValue !== undefined ? goalValue : 0;
   }
 
+
   getMetricValue(data: ActivityData): number {
+    // Handle the special case for 'distance'
+    if (this.metricType === 'distance') {
+      const distancesArray = data.summary.distances;
+      return distancesArray.reduce((sum, distance) => sum + distance.distance, 0);
+    }
+
+    // Handle other metric types
     const metricValue = data.summary[this.metricType as keyof ActivityData['summary']];
+
     if (Array.isArray(metricValue)) {
-      if (this.metricType === 'distance') {
-        return (metricValue as Distance[]).reduce((sum, distance) => sum + distance.distance, 0);
-      }
       return 0;
     }
+
     return metricValue !== undefined && typeof metricValue === 'number' ? metricValue : 0;
   }
 
   formatNumber(value: number, metricType: string): string {
-    if (metricType === 'steps') {
-      return Math.round(value).toString();
+    switch (metricType) {
+      case 'steps':
+        return Math.round(value).toString();
+      case 'distance':
+        return value.toFixed(2);
+      case 'calories':
+      case 'caloriesOut':
+      case 'activityCalories':
+        return Math.round(value).toString();
+      case 'activeMinutes':
+      case 'fairlyActiveMinutes':
+      case 'lightlyActiveMinutes':
+      case 'sedentaryMinutes':
+      case 'veryActiveMinutes':
+      case 'sleepMinutes':
+        return this.formatTime(value);
+      case 'heartRate':
+      case 'restingHeartRate':
+        return Math.round(value).toString();
+      default:
+        return value.toFixed(2);
     }
-    if (metricType === 'distance') {
-      return value.toFixed(2);
-    }
-    return value.toFixed(2);
   }
+  
+  private formatTime(value: number): string {
+    const hours = Math.floor(value / 60);
+    const minutes = Math.round(value % 60);
+    return `${hours}h ${minutes}m`;
+  }
+  
+
+
 
   getUnit(metricType: string): string {
     const units: { [key: string]: string } = {
@@ -181,7 +212,7 @@ export class MetricInfoComponent implements OnChanges, OnInit {
       caloriesOut: 'cal',
       distance: 'km',
       activeMinutes: 'min',
-      sleepMinutes: 'h',
+      sleepMinutes: 'min',
       restingHeartRate: 'bpm'
     };
     return units[metricType] || '';

@@ -15,4 +15,5 @@
     <ion-icon name="checkmark-circle"></ion-icon>
   </div>
 </div>
-<div class="metric-value">{{ metric.value }} {{ metric.unit }}</div>
+<div class="metric-value">{{ formatNumber(metric.value, metric.type) }} {{ metric.unit !== 'min'
+  ? metric.unit : '' }}</div>

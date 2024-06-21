@@ -1,12 +1,13 @@
 import { Routes } from '@angular/router';
 import { HomePage } from './home.page';
-import { authGuard } from '../../guards/auth.guard';
+import { inject } from '@angular/core';
+import { AuthGuard } from '../../guards/auth.guard';
 
 export const routes: Routes = [
   {
     path: '',
     component: HomePage,
-    canActivate: [authGuard],  // Protect all child routes
+    canActivate: [() => inject(AuthGuard).canActivate()], // Protect all child routes
     children: [
       {
         path: 'overview',

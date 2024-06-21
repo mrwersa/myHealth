@@ -83,7 +83,7 @@ export class OverviewPage implements OnInit {
         title: 'Sleep',
         value: data.summary.sleepMinutes,
         goal: data.goals.sleep,
-        unit: 'h',
+        unit: 'min',
         icon: 'bed-outline',
         goalAchieved: data.summary.sleepMinutes >= data.goals.sleep,
         details: `You have slept for ${data.summary.sleepMinutes / 60} hours today.`,

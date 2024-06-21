@@ -1,11 +1,12 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './guards/auth.guard';
+import { inject } from '@angular/core';
+import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
     path: 'home',
     loadChildren: () => import('./pages/home/home.routes').then(m => m.routes),
-    canActivate: [authGuard],
+    canActivate: [() => inject(AuthGuard).canActivate()],
   },
   {
     path: 'login',

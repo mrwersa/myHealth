@@ -11,13 +11,13 @@ addIcons({
 });
 
 @Component({
-  selector: 'app-date-slider',
-  templateUrl: './date-slider.component.html',
-  styleUrls: ['./date-slider.component.scss'],
+  selector: 'app-date-navigator',
+  templateUrl: './date-navigator.component.html',
+  styleUrls: ['./date-navigator.component.scss'],
   standalone: true,
   imports: [IonCardContent, IonCard, CommonModule, IonButton, IonIcon]
 })
-export class DateSliderComponent {
+export class DateNavigatorComponent {
   @Output() dateChange = new EventEmitter<string>();
   selectedDate = new Date();
 

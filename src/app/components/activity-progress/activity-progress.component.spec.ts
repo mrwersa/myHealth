@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
-import { DateSliderComponent } from './date-slider.component';
+import { ActivityProgressComponent } from './activity-progress.component';
 
-describe('DateSliderComponent', () => {
-  let component: DateSliderComponent;
-  let fixture: ComponentFixture<DateSliderComponent>;
+describe('ActivityProgressComponent', () => {
+  let component: ActivityProgressComponent;
+  let fixture: ComponentFixture<ActivityProgressComponent>;
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      imports: [DateSliderComponent],
+      imports: [ActivityProgressComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(DateSliderComponent);
+    fixture = TestBed.createComponent(ActivityProgressComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   }));

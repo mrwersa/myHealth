@@ -8,8 +8,7 @@
     svg {
         width: 100%;
         height: auto;
-        transform: rotate(180deg);
-        /* Rotate the entire SVG to start from 6 o'clock */
+        transform: rotate(180deg); // Rotate the entire SVG to start from 6 o'clock
 
         .bg,
         .meter,
@@ -44,17 +43,15 @@
         ion-icon {
             width: 100%;
             height: 100%;
+            color: var(--ion-color-primary);
         }
     }
 
     .tick-mark {
         position: absolute;
-        bottom: -15px;
-        /* Adjust the position to ensure it appears neatly below the icon */
+        bottom: -15px; // Adjust the position to ensure it appears neatly below the icon
         font-size: var(--activity-tick-mark-size, 20px);
-        /* Adjusted size for better visibility */
-        color: var(--activity-tick-mark-color, green);
-        /* Default tick mark color */
+        color: var(--activity-tick-mark-color, var(--ion-color-success));
         display: flex;
         justify-content: center;
         align-items: center;
@@ -70,6 +67,24 @@
 .metric-value {
     text-align: center;
     font-size: var(--activity-metric-value-font-size, 24px);
-    color: var(--activity-progress-meter-color);
+    color: var(--activity-progress-meter-color, #76c7c0);
     margin-top: 10px;
+}
+
+/* New Styles for Segment Buttons */
+ion-segment {
+    --background: var(--ion-color-light); // Matches the card background
+    --indicator-color: #4caf50; // Green color for the indicator
+    --button-background: #4a4a4a; // Background color of the buttons
+    --button-color: #ffffff; // Text color of the buttons
+    --button-background-checked: #2b2b2b; // Background color of the checked button
+    --button-color-checked: #ffffff; // Text color of the checked button
+    margin-bottom: 16px;
+}
+
+ion-segment-button {
+    --background: #4a4a4a; // Background color of the buttons
+    --color: #ffffff; // Text color of the buttons
+    --background-checked: #2b2b2b; // Background color of the checked button
+    --color-checked: #ffffff; // Text color of the checked button
 }

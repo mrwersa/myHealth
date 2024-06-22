@@ -1,4 +1,4 @@
-.date-slider {
+.date-navigator {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -22,6 +22,8 @@
         position: relative;
 
         &.today {
+            color: var(--ion-color-primary);
+
             &.active {
                 left: -25px; // Move the "Today" text 25px to the left from its centered position
             }

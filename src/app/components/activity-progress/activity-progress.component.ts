@@ -4,22 +4,26 @@ import { IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { flameOutline, bicycleOutline, walkOutline, bedOutline, timerOutline, checkmarkCircle } from 'ionicons/icons';
 import { ActivityDetail } from '../../models/activity.model';
+import { FormatService } from '../../services/format.service';
 
 @Component({
-  selector: 'app-metric-chart',
-  templateUrl: './metric-chart.component.html',
-  styleUrls: ['./metric-chart.component.scss'],
+  selector: 'app-activity-progress',
+  templateUrl: './activity-progress.component.html',
+  styleUrls: ['./activity-progress.component.scss'],
   standalone: true,
   imports: [IonIcon, CommonModule],
 })
-export class MetricChartComponent implements OnInit, OnChanges {
+export class ActivityProgressComponent implements OnInit, OnChanges {
   @Input() metric!: ActivityDetail;
-  @Input() selectedDate!: string; // Added input for selectedDate
+  @Input() selectedDate!: string;
 
   primaryProgress: number = 0;
   secondaryProgress: number = 0;
 
-  constructor() {
+  private previousMetricType: string = '';
+  private previousDate: string = '';
+
+  constructor(private formatService: FormatService) {
     addIcons({
       'flame-outline': flameOutline,
       'bicycle-outline': bicycleOutline,
@@ -31,18 +35,29 @@ export class MetricChartComponent implements OnInit, OnChanges {
   }
 
   ngOnInit() {
-    this.calculateProgress();
+    this.checkAndUpdateProgress();
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['metric'] || changes['selectedDate']) { // Handle both metric and date changes
-      this.calculateProgress();
+    if ((changes['metric'] && this.metric) || (changes['selectedDate'] && this.selectedDate)) {
+      this.checkAndUpdateProgress();
     }
   }
 
-  calculateProgress() {
+  checkAndUpdateProgress() {
+    if (this.metric && this.selectedDate) {
+      if (this.metric.type !== this.previousMetricType || this.selectedDate !== this.previousDate) {
+        this.updateProgress();
+        this.previousMetricType = this.metric.type;
+        this.previousDate = this.selectedDate;
+      }
+    }
+  }
+
+  updateProgress() {
     if (this.metric && this.metric.goal > 0) {
-      const percentage = (this.metric.value / this.metric.goal) * 100;
+      const value = this.metric.value || 0;
+      const percentage = (value / this.metric.goal) * 100;
 
       if (percentage <= 100) {
         this.primaryProgress = percentage;
@@ -52,7 +67,7 @@ export class MetricChartComponent implements OnInit, OnChanges {
         this.secondaryProgress = percentage - 100;
       }
 
-      this.metric.goalAchieved = percentage >= 100; // Set goalAchieved based on percentage
+      this.metric.goalAchieved = percentage >= 100;
     } else {
       this.primaryProgress = 0;
       this.secondaryProgress = 0;
@@ -63,33 +78,12 @@ export class MetricChartComponent implements OnInit, OnChanges {
   }
 
   formatNumber(value: number, metricType: string): string {
-    switch (metricType) {
-      case 'steps':
-        return Math.round(value).toString();
-      case 'distance':
-        return value.toFixed(2);
-      case 'calories':
-      case 'caloriesOut':
-      case 'activityCalories':
-        return Math.round(value).toString();
-      case 'activeMinutes':
-      case 'fairlyActiveMinutes':
-      case 'lightlyActiveMinutes':
-      case 'sedentaryMinutes':
-      case 'veryActiveMinutes':
-      case 'sleepMinutes':
-        return this.formatTime(value);
-      case 'heartRate':
-      case 'restingHeartRate':
-        return Math.round(value).toString();
-      default:
-        return value.toFixed(2);
-    }
+    return this.formatService.formatNumber(value, metricType);
   }
 
   private formatTime(value: number): string {
     const hours = Math.floor(value / 60);
     const minutes = Math.round(value % 60);
-    return `${hours}h ${minutes}m`;
+    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
   }
 }

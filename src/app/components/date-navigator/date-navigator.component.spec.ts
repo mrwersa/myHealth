@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
-import { MetricChartComponent } from './metric-chart.component';
+import { DateNavigatorComponent } from './date-navigator.component';
 
-describe('MetricChartComponent', () => {
-  let component: MetricChartComponent;
-  let fixture: ComponentFixture<MetricChartComponent>;
+describe('DateNavigatorComponent', () => {
+  let component: DateNavigatorComponent;
+  let fixture: ComponentFixture<DateNavigatorComponent>;
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      imports: [MetricChartComponent],
+      imports: [DateNavigatorComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(MetricChartComponent);
+    fixture = TestBed.createComponent(DateNavigatorComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   }));

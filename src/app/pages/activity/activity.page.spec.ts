@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { OverviewPage } from './overview.page';
+import { OverviewPage } from './activity.page';
 
 describe('OverviewPage', () => {
   let component: OverviewPage;

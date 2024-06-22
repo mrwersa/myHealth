@@ -10,12 +10,12 @@ export const routes: Routes = [
     canActivate: [() => inject(AuthGuard).canActivate()], // Protect all child routes
     children: [
       {
-        path: 'overview',
-        loadComponent: () => import('../overview/overview.page').then(m => m.OverviewPage),
+        path: 'activity',
+        loadComponent: () => import('../activity/activity.page').then(m => m.ActivityPage),
       },
       {
         path: '',
-        redirectTo: '/home/overview',
+        redirectTo: '/home/activity',
         pathMatch: 'full',
       },
       {

@@ -4,8 +4,8 @@ import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
-import { ActivityDetail, ActivityData } from '../models/activity.model';
 import { faker } from '@faker-js/faker';
+import { ActivityTimeSeries, ActiveZoneMinutes, Activity } from '../models/activity.model';
 
 @Injectable({
   providedIn: 'root'
@@ -16,15 +16,18 @@ export class FitbitService {
   private getHeaders(): HttpHeaders {
     const token = this.authService.getAccessToken();
     if (!token) {
+      console.error('Access token is not available, logging out...');
       this.authService.logout();
       throw new Error('Access token is not available, authentication is required');
     }
+    console.log('Headers created with token:', token);
     return new HttpHeaders({
       'Authorization': `Bearer ${token}`,
     });
   }
 
-  private generateMockData(): ActivityData {
+  private generateMockData(): Activity {
+    console.log('Generating mock data');
     return {
       summary: {
         steps: faker.number.int({ min: 5000, max: 12000 }),
@@ -33,7 +36,6 @@ export class FitbitService {
           { activity: 'total', distance: faker.number.float({ min: 5, max: 15 }) },
           { activity: 'tracker', distance: faker.number.float({ min: 2, max: 10 }) }
         ],
-        activeMinutes: faker.number.int({ min: 50, max: 200 }),
         fairlyActiveMinutes: faker.number.int({ min: 10, max: 50 }),
         lightlyActiveMinutes: faker.number.int({ min: 20, max: 100 }),
         sedentaryMinutes: faker.number.int({ min: 500, max: 1000 }),
@@ -49,8 +51,8 @@ export class FitbitService {
         activityCalories: faker.number.int({ min: 2000, max: 3000 }),
         caloriesBMR: faker.number.int({ min: 1200, max: 1800 }),
         marginalCalories: faker.number.int({ min: 100, max: 300 }),
-        sleepMinutes: faker.number.int({ min: 300, max: 600 }),
-        useEstimation: faker.datatype.boolean()
+        useEstimation: faker.datatype.boolean(),
+        sleepMinutes: faker.number.int({ min: 300, max: 600 })
       },
       goals: {
         steps: 10000,
@@ -58,92 +60,215 @@ export class FitbitService {
         distance: 8,
         activeMinutes: 30,
         floors: 10,
-        sleep: 480,
-        restingHeartRate: 70
+        sleep: 480
       }
     };
   }
 
-  private generateMockTimeSeriesData(days: number): ActivityData[] {
-    return Array.from({ length: days }, () => this.generateMockData());
+  private generateMockTimeSeriesData(days: number, activityType: string): ActivityTimeSeries[] {
+    console.log(`Generating mock time series data for ${days} days for ${activityType}`);
+    const data: ActivityTimeSeries[] = [];
+    const today = new Date();
+    for (let i = 0; i < days; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+
+      let value;
+      switch (activityType) {
+        case 'steps':
+          value = faker.number.int({ min: 0, max: 20000 }).toString();
+          break;
+        case 'distance':
+          value = faker.number.float({ min: 0, max: 10, precision: 0.01 }).toFixed(2);
+          break;
+        case 'floors':
+          value = faker.number.int({ min: 0, max: 50 }).toString();
+          break;
+        case 'elevation':
+          value = faker.number.float({ min: 0, max: 1000, precision: 0.01 }).toFixed(2);
+          break;
+        case 'minutesSedentary':
+          value = faker.number.int({ min: 0, max: 1440 }).toString();
+          break;
+        case 'minutesLightlyActive':
+          value = faker.number.int({ min: 0, max: 1440 }).toString();
+          break;
+        case 'minutesFairlyActive':
+          value = faker.number.int({ min: 0, max: 1440 }).toString();
+          break;
+        case 'minutesVeryActive':
+          value = faker.number.int({ min: 0, max: 1440 }).toString();
+          break;
+        case 'calories':
+          value = faker.number.int({ min: 0, max: 5000 }).toString();
+          break;
+        default:
+          value = faker.number.int({ min: 0, max: 100 }).toString();
+          break;
+      }
+
+      data.push({
+        dateTime: date.toISOString().split('T')[0],
+        value: value
+      });
+    }
+    return data;
   }
 
-  fetchActivityAndGoals(date: string): Observable<ActivityData> {
+  private generateMockActiveZoneMinutesTimeSeries(days: number): ActiveZoneMinutes[] {
+    console.log(`Generating mock active zone minutes time series data for ${days} days`);
+    const data: ActiveZoneMinutes[] = [];
+    const today = new Date();
+
+    for (let i = 0; i < days; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+
+      data.push({
+        dateTime: date.toISOString().split('T')[0],
+        value: {
+          activeZoneMinutes: faker.number.int({ min: 0, max: 60 }),
+          fatBurnActiveZoneMinutes: faker.number.int({ min: 0, max: 30 })
+        }
+      });
+    }
+
+    return data;
+  }
+
+  fetchActivityAndGoals(date: string): Observable<any> {
+    console.log(`Fetching activity and goals for date: ${date}`);
     if (environment.test) {
+      console.log('Environment is set to test, returning mock data');
       return of(this.generateMockData());
     }
 
     try {
       const headers = this.getHeaders();
       const url = `${environment.fitbitApiBaseUrl}/activities/date/${date}.json`;
+      console.log(`Making GET request to URL: ${url}`);
 
       return this.http.get<any>(url, { headers }).pipe(
-        map(response => ({
-          summary: {
-            steps: response.summary.steps,
-            caloriesOut: response.summary.caloriesOut,
-            distances: response.summary.distances.map((d: any) => ({ activity: d.activity, distance: d.distance })),
-            activeMinutes: response.summary.activeMinutes,
-            fairlyActiveMinutes: response.summary.fairlyActiveMinutes,
-            lightlyActiveMinutes: response.summary.lightlyActiveMinutes,
-            sedentaryMinutes: response.summary.sedentaryMinutes,
-            veryActiveMinutes: response.summary.veryActiveMinutes,
-            elevation: response.summary.elevation,
-            floors: response.summary.floors,
-            heartRateZones: response.summary.heartRateZones.map((zone: any) => ({
-              name: zone.name,
-              min: zone.min,
-              max: zone.max,
-              minutes: zone.minutes,
-              caloriesOut: zone.caloriesOut
-            })),
-            restingHeartRate: response.summary.restingHeartRate,
-            activityCalories: response.summary.activityCalories,
-            caloriesBMR: response.summary.caloriesBMR,
-            marginalCalories: response.summary.marginalCalories,
-            useEstimation: response.summary.useEstimation,
-            sleepMinutes: response.summary.sleepMinutes
-          },
-          goals: {
-            steps: response.goals.steps,
-            caloriesOut: response.goals.caloriesOut,
-            distance: response.goals.distance,
-            activeMinutes: response.goals.activeMinutes,
-            floors: response.goals.floors,
-            sleep: response.goals.sleep,
-            restingHeartRate: response.goals.restingHeartRate
-          }
-        })),
+        map(response => {
+          console.log('Response received:', response);
+          return {
+            summary: {
+              steps: response.summary.steps || 0,
+              caloriesOut: response.summary.caloriesOut || 0,
+              distances: response.summary.distances?.map((d: any) => ({ activity: d.activity, distance: d.distance || 0 })) || [],
+              fairlyActiveMinutes: response.summary.fairlyActiveMinutes || 0,
+              lightlyActiveMinutes: response.summary.lightlyActiveMinutes || 0,
+              sedentaryMinutes: response.summary.sedentaryMinutes || 0,
+              veryActiveMinutes: response.summary.veryActiveMinutes || 0,
+              elevation: response.summary.elevation || 0,
+              floors: response.summary.floors || 0,
+              heartRateZones: response.summary.heartRateZones?.map((zone: any) => ({
+                name: zone.name || '',
+                min: zone.min || 0,
+                max: zone.max || 0,
+                minutes: zone.minutes || 0,
+                caloriesOut: zone.caloriesOut || 0
+              })) || [],
+              restingHeartRate: response.summary.restingHeartRate || 0,
+              activityCalories: response.summary.activityCalories || 0,
+              caloriesBMR: response.summary.caloriesBMR || 0,
+              marginalCalories: response.summary.marginalCalories || 0,
+              useEstimation: response.summary.useEstimation || false,
+              sleepMinutes: response.summary.sleepMinutes || 0
+            },
+            goals: {
+              steps: response.goals.steps || 0,
+              caloriesOut: response.goals.caloriesOut || 0,
+              distance: response.goals.distance || 0,
+              activeMinutes: response.goals.activeMinutes || 0,
+              floors: response.goals.floors || 0,
+              sleep: response.goals.sleep || 0,
+              restingHeartRate: response.goals.restingHeartRate || 0
+            }
+          };
+        }),
         catchError(err => {
           console.error('Error fetching activity and goals:', err);
           return throwError(() => new Error('Failed to fetch activity and goals'));
         })
       );
     } catch (error) {
-      console.error(error);
+      console.error('Error in fetchActivityAndGoals:', error);
       return throwError(() => new Error('Failed to fetch activity and goals due to authentication issues'));
     }
   }
 
-  fetchActivityTimeSeries(activityType: string, startDate: string, endDate: string): Observable<ActivityData[]> {
+  fetchActiveZoneMinutesTimeSeries(startDate: string, endDate: string): Observable<ActiveZoneMinutes[]> {
+    console.log(`Fetching active zone minutes time series for start date: ${startDate}, end date: ${endDate}`);
     if (environment.test) {
-      const mockData = this.generateMockTimeSeriesData(30); // Generate 30 days of data for a more comprehensive dataset
+      console.log('Environment is set to test, returning mock time series data');
+      const daysDiff = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 3600 * 24));
+      const mockData = this.generateMockActiveZoneMinutesTimeSeries(daysDiff);
       return of(mockData);
     }
 
     try {
       const headers = this.getHeaders();
-      const url = `${environment.fitbitApiBaseUrl}/activities/${activityType}/date/${startDate}/${endDate}.json`;
+      const url = `${environment.fitbitApiBaseUrl}/activities/active-zone-minutes/date/${startDate}/${endDate}.json`;
+      console.log(`Making GET request to URL: ${url}`);
 
       return this.http.get<any>(url, { headers }).pipe(
-        map(response => response['activities']), // Adjust this based on the actual structure of the Fitbit API response
+        map(response => {
+          console.log('Response received:', response);
+          return response['activities-active-zone-minutes'].map((entry: any) => ({
+            dateTime: entry.dateTime,
+            value: {
+              activeZoneMinutes: entry.value.activeZoneMinutes,
+              fatBurnActiveZoneMinutes: entry.value.fatBurnActiveZoneMinutes
+            }
+          }));
+        }),
+        catchError(err => {
+          console.error('Error fetching active zone minutes time series:', err);
+          return throwError(() => new Error('Failed to fetch active zone minutes time series'));
+        })
+      );
+    } catch (error) {
+      console.error('Error in fetchActiveZoneMinutesTimeSeries:', error);
+      return throwError(() => new Error('Failed to fetch active zone minutes time series due to authentication issues'));
+    }
+  }
+
+  fetchActivityTimeSeries(activityType: string, startDate: string, endDate: string): Observable<ActivityTimeSeries[]> {
+    console.log(`Fetching activity time series for type: ${activityType}, start date: ${startDate}, end date: ${endDate}`);
+    if (environment.test) {
+      console.log('Environment is set to test, returning mock time series data');
+      const daysDiff = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 3600 * 24));
+      const mockData = this.generateMockTimeSeriesData(daysDiff, activityType);
+      return of(mockData);
+    }
+
+    const validActivityTypes = ['steps', 'distance', 'floors', 'elevation', 'minutesSedentary', 'minutesLightlyActive', 'minutesFairlyActive', 'minutesVeryActive', 'calories'];
+
+    if (!validActivityTypes.includes(activityType)) {
+      return throwError(() => new Error('Invalid activity type'));
+    }
+
+    try {
+      const headers = this.getHeaders();
+      const url = `${environment.fitbitApiBaseUrl}/activities/${activityType}/date/${startDate}/${endDate}.json`;
+      console.log(`Making GET request to URL: ${url}`);
+
+      return this.http.get<any>(url, { headers }).pipe(
+        map(response => {
+          console.log('Response received:', response);
+          return response[`activities-${activityType}`].map((item: any) => ({
+            dateTime: item.dateTime,
+            value: item.value
+          }));
+        }),
         catchError(err => {
           console.error('Error fetching activity time series:', err);
           return throwError(() => new Error('Failed to fetch activity time series'));
         })
       );
     } catch (error) {
-      console.error(error);
+      console.error('Error in fetchActivityTimeSeries:', error);
       return throwError(() => new Error('Failed to fetch activity time series due to authentication issues'));
     }
   }

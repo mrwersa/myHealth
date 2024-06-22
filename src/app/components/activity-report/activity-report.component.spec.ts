@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
-import { MetricInfoComponent } from './metric-info.component';
+import { ActivityReportComponent } from './activity-report.component';
 
 describe('MetricInfoComponent', () => {
-  let component: MetricInfoComponent;
-  let fixture: ComponentFixture<MetricInfoComponent>;
+  let component: ActivityReportComponent;
+  let fixture: ComponentFixture<ActivityReportComponent>;
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      imports: [MetricInfoComponent],
+      imports: [ActivityReportComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(MetricInfoComponent);
+    fixture = TestBed.createComponent(ActivityReportComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   }));

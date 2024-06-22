@@ -2,6 +2,10 @@ ion-header {
   ion-toolbar {
     --padding-start: 20px;
     --padding-end: 20px;
+    --background: var(--menu-bg-color);
+    /* Background color */
+    --color: var(--menu-text-color);
+    /* Text color */
 
     ion-title {
       display: flex;
@@ -15,6 +19,7 @@ ion-header {
     }
 
     ion-buttons {
+
       .avatar,
       .avatar-icon {
         width: 32px;
@@ -24,7 +29,8 @@ ion-header {
         overflow: hidden;
         display: inline-block;
         font-size: 32px;
-        color: #333333;
+        color: var(--menu-icon-color);
+        /* Use global variable for icon color */
       }
     }
   }

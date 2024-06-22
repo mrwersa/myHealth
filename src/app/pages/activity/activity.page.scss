@@ -9,7 +9,6 @@ ion-content {
   background-color: var(--ion-background-color);
   padding-top: var(--ion-safe-area-top);
   margin-bottom: 10px;
-  /* Adjust if needed */
 }
 
 .activity-card {
@@ -38,43 +37,27 @@ ion-content {
 }
 
 ion-button {
-  --background: #4caf50;
-  /* Initial button background color */
-  --color: #ffffff;
-  /* Initial button text color */
+  --color: var(--button-text-color, #ffffff);
   --border-radius: 50%;
-  /* Make buttons circular */
   outline: none;
   box-shadow: none;
+  margin: 0 5px;
 
   &:focus,
   &:active {
-    --background: #4caf50 !important;
-    /* Ensure the background color stays the same on focus/active */
-    --color: #ffffff !important;
-    /* Ensure the text color stays the same on focus/active */
+    --color: var(--button-focus-text-color, #ffffff) !important;
     outline: none;
-    /* Remove default outline */
     box-shadow: none;
-    /* Remove default box shadow */
   }
 
   &:disabled {
-    --background: #e0e0e0;
-    /* Disabled background color */
-    --color: #a0a0a0;
-    /* Disabled text color */
+    --color: var(--button-text-color-disabled, #a0a0a0);
   }
 }
 
 ion-button::part(native) {
   outline: none;
   box-shadow: none;
-}
-
-ion-button:focus {
-  outline: none !important;
-  box-shadow: none !important;
 }
 
 ion-icon {
@@ -90,28 +73,28 @@ ion-icon {
 .activity-report-card {
   background-color: var(--ion-color-light);
   padding: 0;
-  /* Remove padding to give more space for the chart */
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
-  /* Added to give some gap above the details section */
 }
 
 .activity-report-title {
   margin-top: 20px;
-  /* Adjusted to give more space above the title */
   padding-top: 10px;
-  /* Added padding to ensure there is space */
   font-size: 18px;
   font-weight: bold;
+  text-align: center;
+}
+
+.activity-report-sub-title {
+  margin-top: 10px;
+  font-size: 14px;
   margin-bottom: 10px;
   text-align: center;
-  /* Centering the title */
 }
 
 .activity-report-content {
   padding: 10px;
-  /* Adjust to add some spacing inside the card */
 }
 
 .activity-report-card canvas {
@@ -119,33 +102,67 @@ ion-icon {
   margin-right: auto;
 }
 
-/* New Styles for Segment Buttons */
 ion-segment {
   --background: var(--ion-color-light);
-  /* Matches the card background */
   --indicator-color: #4caf50;
-  /* Green color for the indicator */
   --button-background: #4a4a4a;
-  /* Background color of the buttons */
   --button-color: #ffffff;
-  /* Text color of the buttons */
   --button-background-checked: #2b2b2b;
-  /* Background color of the checked button */
   --button-color-checked: #ffffff;
-  /* Text color of the checked button */
   margin-bottom: 16px;
-  justify-content: center;
 }
 
 ion-segment-button {
   --background: #4a4a4a;
-  /* Background color of the buttons */
   --color: #ffffff;
-  /* Text color of the buttons */
   --background-checked: #2b2b2b;
-  /* Background color of the checked button */
   --color-checked: #ffffff;
-  /* Text color of the checked button */
-  flex-grow: 1;
-  text-align: center;
+}
+
+.date-navigator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  background-color: var(--ion-color-light);
+  border: 1px solid var(--ion-color-medium);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+
+  .date-text-container {
+    flex-grow: 1;
+    text-align: center;
+    position: relative;
+  }
+
+  .date-text {
+    font-size: 18px;
+    color: var(--ion-color-dark);
+    font-weight: bold;
+    position: relative;
+
+    &.today {
+      color: var(--ion-color-primary);
+    }
+  }
+
+  ion-button {
+    margin: 0 5px;
+  }
+
+  ion-button::part(native) {
+    outline: none;
+    box-shadow: none;
+  }
+
+  ion-button:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  ion-icon {
+    font-size: 20px;
+    color: inherit;
+  }
 }

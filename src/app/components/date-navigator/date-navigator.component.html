@@ -3,10 +3,11 @@
     <ion-icon name="arrow-back-circle"></ion-icon>
   </ion-button>
   <div class="date-text-container">
-    <span class="date-text" [class.today]="isCurrentPeriod()" [class.active]="isCurrentPeriod()">{{ displayPeriod
-      }}</span>
+    <span class="date-text" [class.today]="isCurrentPeriod()">{{ displayPeriod }}</span>
   </div>
-  <ion-icon *ngIf="!isCurrentPeriod()" name="home" (click)="goToCurrentPeriod()" [title]="getTooltip()"></ion-icon>
+  <div *ngIf="!isCurrentPeriod()" class="home-icon">
+    <ion-icon name="home" (click)="goToCurrentPeriod()" [title]="getTooltip()"></ion-icon>
+  </div>
   <ion-button [disabled]="isCurrentPeriod()" (click)="next()">
     <ion-icon name="arrow-forward-circle"></ion-icon>
   </ion-button>

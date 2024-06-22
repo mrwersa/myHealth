@@ -1,7 +1,11 @@
-<ion-content class="ion-padding">
+<ion-content class="ion-padding" (ionScroll)="onScroll($event)">
   <div class="date-navigator-container">
     <app-date-navigator [viewMode]="'day'" (dateChange)="onDateChange($event)"></app-date-navigator>
   </div>
+
+  <ion-refresher slot="fixed" (ionRefresh)="refreshData($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
 
   <div class="activity-card">
     <div class="activity-card-header">
@@ -20,6 +24,7 @@
 
   <div class="activity-report-card">
     <div class="activity-report-title">Report</div>
+    <div class="activity-report-sub-title">{{currentMetric.title}}</div>
     <div class="activity-report-content">
       <app-activity-report [metric]="currentMetric" [selectedDate]="selectedDate"></app-activity-report>
     </div>

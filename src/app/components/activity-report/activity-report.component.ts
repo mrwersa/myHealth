@@ -236,11 +236,11 @@ export class ActivityReportComponent implements OnChanges, OnInit {
       };
       reportTitle = 'Monthly Report';
     } else if (this.view === 'year') {
-      const currentYear = new Date().getFullYear();
+      const selectedYear = new Date(this.selectedDate).getFullYear();
       const monthsInYear = 12;
-      this.barChartLabels = Array.from({ length: monthsInYear }, (_, i) => new Date(currentYear, i).toLocaleString('default', { month: 'short' }).charAt(0).toUpperCase());
+      this.barChartLabels = Array.from({ length: monthsInYear }, (_, i) => new Date(selectedYear, i).toLocaleString('default', { month: 'short' }).charAt(0).toUpperCase());
       const yearData = Array.from({ length: monthsInYear }, (_, i) => {
-        const monthData = data.find(d => d.dateTime.startsWith(`${currentYear}-${(i + 1).toString().padStart(2, '0')}`));
+        const monthData = data.find(d => d.dateTime.startsWith(`${selectedYear}-${(i + 1).toString().padStart(2, '0')}`));
         return monthData ? parseFloat(monthData.value) : 0;
       });
       this.barChartData = {
@@ -275,6 +275,32 @@ export class ActivityReportComponent implements OnChanges, OnInit {
       reportTitle = 'Daily Report';
     }
 
+    // Update the chart options for tooltips
+    this.barChartOptions.plugins = {
+      ...this.barChartOptions.plugins,
+      tooltip: {
+        callbacks: {
+          title: (tooltipItems: any) => {
+            const item = tooltipItems[0];
+            const date = new Date(this.selectedDate);
+            if (this.view === 'week') {
+              const weekStartDate = this.getStartOfWeek(date);
+              const tooltipDate = new Date(weekStartDate.getTime() + item.dataIndex * 24 * 60 * 60 * 1000);
+              return tooltipDate.toLocaleDateString('default', { weekday: 'short', day: 'numeric', month: 'short' });
+            } else if (this.view === 'month') {
+              return new Date(date.getFullYear(), date.getMonth(), item.dataIndex + 1).toLocaleDateString('default', { weekday: 'short', day: 'numeric', month: 'short' });
+            } else if (this.view === 'year') {
+              return new Date(date.getFullYear(), item.dataIndex).toLocaleString('default', { month: 'long' });
+            }
+            return '';
+          },
+          label: (tooltipItem: any) => {
+            return `Value: ${tooltipItem.raw}`;
+          }
+        }
+      }
+    };
+
     if (this.barChartOptions.plugins) {
       this.barChartOptions.plugins.legend = { display: false };
       if (this.barChartOptions.plugins.title) {
@@ -291,6 +317,8 @@ export class ActivityReportComponent implements OnChanges, OnInit {
     if (this.chart) {
       this.chart.update();
     }
+
+    console.log('Final barChartData:', this.barChartData); // Added for debugging
   }
 
   fillWeekData(data: ActivityTimeSeries[]): ActivityTimeSeries[] {
@@ -328,9 +356,13 @@ export class ActivityReportComponent implements OnChanges, OnInit {
   }
 
   aggregateByMonth(data: ActivityTimeSeries[]): ActivityTimeSeries[] {
-    const currentYear = new Date().getFullYear();
+    if (data.length === 0) return [];
+
+    const firstEntryDate = new Date(data[0].dateTime);
+    const targetYear = firstEntryDate.getFullYear();
+
     const monthlyData = Array.from({ length: 12 }, (_, i) => ({
-      dateTime: `${currentYear}-${(i + 1).toString().padStart(2, '0')}-01`,
+      dateTime: `${targetYear}-${(i + 1).toString().padStart(2, '0')}-01`,
       value: '0'  // Initialize as string
     }));
     const monthCounts = Array.from({ length: 12 }, () => 0);
@@ -340,7 +372,7 @@ export class ActivityReportComponent implements OnChanges, OnInit {
       const dataMonth = date.getMonth();
       const dataYear = date.getFullYear();
 
-      if (dataYear === currentYear) {
+      if (dataYear === targetYear) {
         monthlyData[dataMonth].value = (parseFloat(monthlyData[dataMonth].value) + parseFloat(entry.value)).toString();
         monthCounts[dataMonth]++;
       }
@@ -353,9 +385,10 @@ export class ActivityReportComponent implements OnChanges, OnInit {
       }
     }
 
+    console.log('Final monthlyData:', monthlyData); // Added for debugging
+
     return monthlyData;
   }
-
 
   mapMetricToActivityType(type: string): string {
     const validActivityTypes: { [key: string]: string } = {

@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Output, Input, OnChanges, SimpleChanges, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonButton, IonIcon, IonCard, IonCardContent } from '@ionic/angular/standalone';
-import { format, isToday as isTodayFn, subDays, addDays, subWeeks, addWeeks, subMonths, addMonths, subYears, addYears, startOfWeek, startOfMonth, startOfYear, isSameWeek, isSameMonth, isSameYear, isFuture, min, endOfWeek, endOfMonth, endOfYear } from 'date-fns';
+import { format, isToday as isTodayFn, subDays, addDays, subWeeks, addWeeks, subMonths, addMonths, subYears, addYears, startOfWeek, startOfMonth, startOfYear, isSameWeek, isSameMonth, isSameYear, isFuture, min, endOfWeek, endOfMonth, endOfYear, startOfDay } from 'date-fns';
 import { addIcons } from 'ionicons';
 import { arrowBackCircle, arrowForwardCircle, home } from 'ionicons/icons';
 import { FormatService } from '../../services/format.service';
@@ -92,16 +92,17 @@ export class DateNavigatorComponent implements OnInit, OnChanges {
     const date = new Date(this.selectedDate);
     const startOfCurrentMonth = startOfMonth(new Date());
     const startOfCurrentYear = startOfYear(new Date());
-    const twoYearsAgo = subYears(new Date(), 2);
+    const twoYearsAgo = startOfYear(subYears(new Date(), 2));
 
     switch (this.viewMode) {
       case 'day':
+        return startOfDay(date) > startOfCurrentMonth;
       case 'week':
-        return date > startOfCurrentMonth;
+        return startOfWeek(date) > startOfCurrentMonth;
       case 'month':
-        return date > startOfCurrentYear;
+        return startOfMonth(date) > startOfCurrentYear;
       case 'year':
-        return date > twoYearsAgo;
+        return startOfYear(date) > twoYearsAgo;
       default:
         return true;
     }

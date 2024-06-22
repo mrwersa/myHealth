@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonContent, IonIcon, IonButton } from '@ionic/angular/standalone';
+import { IonContent, IonIcon, IonButton, IonInfiniteScroll, IonInfiniteScrollContent, IonRefresher, IonRefresherContent } from '@ionic/angular/standalone';
 import { FormsModule } from '@angular/forms';
 import { DateNavigatorComponent } from '../../components/date-navigator/date-navigator.component';
 import { ActivityProgressComponent } from '../../components/activity-progress/activity-progress.component';
@@ -16,7 +16,7 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./activity.page.scss'],
   standalone: true,
   imports: [
-    IonButton, IonIcon, IonContent, CommonModule, FormsModule,
+    IonButton, IonIcon, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonRefresher, IonRefresherContent, CommonModule, FormsModule,
     DateNavigatorComponent, ActivityProgressComponent, ActivityReportComponent
   ]
 })
@@ -24,7 +24,12 @@ export class ActivityPage implements OnInit, OnDestroy {
   metrics: ActivityDetail[] = [];
   currentMetricIndex = 0;
   selectedDate: string = this.getCurrentDateString();
+  view: 'day' | 'week' | 'month' | 'year' = 'day';  // Add the 'view' property here
   private subscriptions: Subscription = new Subscription();
+
+  @ViewChild(IonInfiniteScroll) infiniteScroll!: IonInfiniteScroll;
+  @ViewChild(IonContent) content!: IonContent;
+  @ViewChild(IonRefresher) refresher!: IonRefresher;
 
   get currentMetric(): ActivityDetail {
     return this.metrics[this.currentMetricIndex] || {
@@ -50,8 +55,20 @@ export class ActivityPage implements OnInit, OnDestroy {
           this.metrics = this.mapActivityDataToMetrics(data);
           // Fetch Zone Minutes separately
           this.loadZoneMinutesMetric(data.goals.activeMinutes);
+          if (this.refresher) {
+            setTimeout(() => {
+              this.refresher.complete(); // Complete the refresher with a delay
+            }, 1000); // Adjust the delay as needed
+          }
         },
-        error: (err) => console.error('Error fetching activity data:', err)
+        error: (err) => {
+          console.error('Error fetching activity data:', err);
+          if (this.refresher) {
+            setTimeout(() => {
+              this.refresher.complete(); // Complete the refresher in case of error with a delay
+            }, 1000); // Adjust the delay as needed
+          }
+        }
       });
       this.subscriptions.add(subscription);
     }
@@ -165,5 +182,22 @@ export class ActivityPage implements OnInit, OnDestroy {
 
   nextMetric() {
     if (this.currentMetricIndex < this.metrics.length - 1) this.currentMetricIndex++;
+  }
+
+  onScroll(event: any) {
+    const threshold = 100;
+    this.content.getScrollElement().then(el => {
+      const position = el.scrollTop;
+      if (position > threshold) {
+        this.loadMetrics();
+      }
+    });
+  }
+
+  refreshData(event: any) {
+    this.loadMetrics();
+    setTimeout(() => {
+      this.refresher.complete();
+    }, 2000);
   }
 }

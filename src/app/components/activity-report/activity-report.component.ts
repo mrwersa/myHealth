@@ -2,7 +2,7 @@ import { Component, Input, OnChanges, SimpleChanges, ViewChild, OnInit } from '@
 import { CommonModule } from '@angular/common';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartOptions, ChartType, ChartData } from 'chart.js';
-import { IonCard, IonCardContent, IonSegment, IonSegmentButton, IonLabel } from '@ionic/angular/standalone';
+import { IonCard, IonCardContent, IonSegment, IonSegmentButton, IonLabel, IonContent } from '@ionic/angular/standalone';
 import { FitbitService } from '../../services/fitbit.service';
 import { FormatService } from '../../services/format.service';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, min } from 'date-fns';
@@ -17,7 +17,7 @@ type SegmentValue = 'day' | 'week' | 'month' | 'year';
   templateUrl: './activity-report.component.html',
   styleUrls: ['./activity-report.component.scss'],
   standalone: true,
-  imports: [IonLabel, CommonModule, IonCard, IonCardContent, BaseChartDirective, IonSegment, IonSegmentButton, DateNavigatorComponent] // Include the navigator component
+  imports: [IonContent, IonLabel, CommonModule, IonCard, IonCardContent, BaseChartDirective, IonSegment, IonSegmentButton, DateNavigatorComponent] // Include the navigator component
 })
 export class ActivityReportComponent implements OnChanges, OnInit {
   @Input() metric!: ActivityDetail;
@@ -66,17 +66,19 @@ export class ActivityReportComponent implements OnChanges, OnInit {
 
   bestMetric: number = 0;
   metricValue: number = 0;
+  initializing: boolean = true;
 
   constructor(private fitbitService: FitbitService, private formatService: FormatService) { }
 
   ngOnInit() {
     if (this.metric && this.selectedDate) {
       this.checkAndLoadReportData();
+      this.initializing = false; // Set initializing to false after initial load
     }
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if ((changes['metric'] && this.metric) || (changes['selectedDate'] && this.selectedDate)) {
+    if (!this.initializing && ((changes['metric'] && this.metric) || (changes['selectedDate'] && this.selectedDate))) {
       this.checkAndLoadReportData();
     }
   }
@@ -117,9 +119,10 @@ export class ActivityReportComponent implements OnChanges, OnInit {
         startDate = startOfYear(new Date(this.selectedDate));
         endDate = min([endOfYear(new Date(this.selectedDate)), currentDate]);
         break;
+      case 'day':
       default:
-        endDate = currentDate; // For day view, the end date is the current date itself
-        startDate = endDate;
+        // For day view, no data is fetched
+        return;
     }
 
     const startDateString = startDate.toISOString().split('T')[0];
@@ -141,6 +144,7 @@ export class ActivityReportComponent implements OnChanges, OnInit {
           }
         });
       } else {
+        // Fetch data for other activity types
         this.fitbitService.fetchActivityTimeSeries(activityType, startDateString, endDateString).subscribe({
           next: (data: ActivityTimeSeries[]) => {
             this.processReportData(data);

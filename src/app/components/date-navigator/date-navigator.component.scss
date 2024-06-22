@@ -1,3 +1,44 @@
+ion-button {
+    --background: var(--button-background-color, #4caf50);
+    /* Initial button background color */
+    --color: var(--button-text-color, #ffffff);
+    /* Initial button text color */
+    --border-radius: 50%;
+    /* Make buttons circular */
+
+    &.button-clear {
+        --background: transparent;
+    }
+
+    &.button-outline {
+        --border-color: var(--button-background-color, #4caf50);
+    }
+
+    &:focus,
+    &:active {
+        --background: var(--button-focus-background-color, #45a049) !important;
+        /* Ensure the background color stays the same on focus/active */
+        --color: var(--button-focus-text-color, #ffffff) !important;
+        /* Ensure the text color stays the same on focus/active */
+        outline: none;
+        /* Remove default outline */
+        box-shadow: none;
+        /* Remove default box shadow */
+    }
+
+    &:disabled {
+        --background: var(--button-background-color-disabled, #e0e0e0);
+        /* Disabled background color */
+        --color: var(--button-text-color-disabled, #a0a0a0);
+        /* Disabled text color */
+    }
+}
+
+ion-icon {
+    font-size: 20px;
+    color: inherit;
+}
+
 .date-navigator {
     display: flex;
     align-items: center;
@@ -23,10 +64,6 @@
 
         &.today {
             color: var(--ion-color-primary);
-
-            &.active {
-                left: -25px; // Move the "Today" text 25px to the left from its centered position
-            }
         }
     }
 

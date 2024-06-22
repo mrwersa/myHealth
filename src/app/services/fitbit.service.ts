@@ -26,8 +26,8 @@ export class FitbitService {
     });
   }
 
-  private generateMockData(): Activity {
-    console.log('Generating mock data');
+  private generateMockActivityData(): Activity {
+    console.log('Generating mock activity data');
     return {
       summary: {
         steps: faker.number.int({ min: 5000, max: 12000 }),
@@ -65,14 +65,13 @@ export class FitbitService {
     };
   }
 
-  private generateMockTimeSeriesData(days: number, activityType: string): ActivityTimeSeries[] {
-    console.log(`Generating mock time series data for ${days} days for ${activityType}`);
+  private generateMockTimeSeriesData(startDate: string, endDate: string, activityType: string): ActivityTimeSeries[] {
+    console.log(`Generating mock time series data from ${startDate} to ${endDate} for ${activityType}`);
     const data: ActivityTimeSeries[] = [];
-    const today = new Date();
-    for (let i = 0; i < days; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
+    let currentDate = new Date(startDate);
+    const end = new Date(endDate);
 
+    while (currentDate <= end) {
       let value;
       switch (activityType) {
         case 'steps':
@@ -108,39 +107,43 @@ export class FitbitService {
       }
 
       data.push({
-        dateTime: date.toISOString().split('T')[0],
+        dateTime: currentDate.toISOString().split('T')[0],
         value: value
       });
+
+      currentDate.setDate(currentDate.getDate() + 1);
     }
+
     return data;
   }
 
-  private generateMockActiveZoneMinutesTimeSeries(days: number): ActiveZoneMinutes[] {
-    console.log(`Generating mock active zone minutes time series data for ${days} days`);
+  private generateMockActiveZoneMinutesTimeSeries(startDate: string, endDate: string): ActiveZoneMinutes[] {
+    console.log(`Generating mock active zone minutes time series data from ${startDate} to ${endDate}`);
     const data: ActiveZoneMinutes[] = [];
-    const today = new Date();
+    let currentDate = new Date(startDate);
+    const end = new Date(endDate);
 
-    for (let i = 0; i < days; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-
+    while (currentDate <= end) {
       data.push({
-        dateTime: date.toISOString().split('T')[0],
+        dateTime: currentDate.toISOString().split('T')[0],
         value: {
           activeZoneMinutes: faker.number.int({ min: 0, max: 60 }),
           fatBurnActiveZoneMinutes: faker.number.int({ min: 0, max: 30 }),
         }
       });
+
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
     return data;
   }
 
+
   fetchActivityAndGoals(date: string): Observable<any> {
     console.log(`Fetching activity and goals for date: ${date}`);
     if (environment.test) {
       console.log('Environment is set to test, returning mock data');
-      return of(this.generateMockData());
+      return of(this.generateMockActivityData());
     }
 
     try {
@@ -202,8 +205,7 @@ export class FitbitService {
     console.log(`Fetching active zone minutes time series for start date: ${startDate}, end date: ${endDate}`);
     if (environment.test) {
       console.log('Environment is set to test, returning mock time series data');
-      const daysDiff = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 3600 * 24));
-      const mockData = this.generateMockActiveZoneMinutesTimeSeries(daysDiff + 1);
+      const mockData = this.generateMockActiveZoneMinutesTimeSeries(startDate, endDate);
       return of(mockData);
     }
 
@@ -238,8 +240,8 @@ export class FitbitService {
     console.log(`Fetching activity time series for type: ${activityType}, start date: ${startDate}, end date: ${endDate}`);
     if (environment.test) {
       console.log('Environment is set to test, returning mock time series data');
-      const daysDiff = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 3600 * 24));
-      const mockData = this.generateMockTimeSeriesData(daysDiff + 1, activityType);
+      const mockData = this.generateMockTimeSeriesData(startDate, endDate, activityType);
+      console.log(mockData)
       return of(mockData);
     }
 
@@ -273,3 +275,4 @@ export class FitbitService {
     }
   }
 }
+

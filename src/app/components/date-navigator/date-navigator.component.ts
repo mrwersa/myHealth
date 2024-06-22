@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { IonButton, IonIcon, IonCard, IonCardContent } from '@ionic/angular/standalone';
 import { format, isToday as isTodayFn, subDays, addDays, subWeeks, addWeeks, subMonths, addMonths, subYears, addYears, startOfWeek, startOfMonth, startOfYear, isSameWeek, isSameMonth, isSameYear, isFuture, min, endOfWeek, endOfMonth, endOfYear } from 'date-fns';
 import { addIcons } from 'ionicons';
-import { arrowBackCircle, arrowForwardCircle } from 'ionicons/icons';
+import { arrowBackCircle, arrowForwardCircle, home } from 'ionicons/icons';
 import { FormatService } from '../../services/format.service';
 
 addIcons({
   'arrow-back-circle': arrowBackCircle,
   'arrow-forward-circle': arrowForwardCircle,
+  'home': home,
 });
 
 @Component({
@@ -20,92 +21,135 @@ addIcons({
 })
 export class DateNavigatorComponent implements OnInit, OnChanges {
   @Output() dateChange = new EventEmitter<string>();
-  @Input() viewMode: 'day' | 'week' | 'month' | 'year' = 'day';  // Use @Input to accept viewMode as input
+  @Input() viewMode: 'day' | 'week' | 'month' | 'year' = 'day';
+  @Input() selectedDate: string = new Date().toISOString().split('T')[0];  // Use string type for selectedDate
 
-  selectedDate = new Date();
+  displayPeriod: string = '';
 
   constructor(private formatService: FormatService) { }
 
   ngOnInit() {
-    this.updateViewMode();
+    this.updateDisplayPeriod();
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['viewMode']) {
-      this.updateViewMode();
+    if (changes['viewMode'] || changes['selectedDate']) {
+      this.updateDisplayPeriod();
     }
-  }
-
-  updateViewMode() {
-    this.selectedDate = new Date(); // Reset to today
-    this.emitDateChange();
   }
 
   previous() {
-    switch (this.viewMode) {
-      case 'day':
-        this.selectedDate = subDays(this.selectedDate, 1);
-        break;
-      case 'week':
-        this.selectedDate = subWeeks(this.selectedDate, 1);
-        break;
-      case 'month':
-        this.selectedDate = subMonths(this.selectedDate, 1);
-        break;
-      case 'year':
-        this.selectedDate = subYears(this.selectedDate, 1);
-        break;
+    if (this.canMoveBack()) {
+      let date = new Date(this.selectedDate);
+      this.selectedDate = this.getPreviousDate(date).toISOString().split('T')[0];
+      this.emitDateChange();
+      this.updateDisplayPeriod();
     }
-    this.emitDateChange();
   }
 
   next() {
-    const newDate = this.getNextDate();
-    if (!isFuture(newDate)) {
-      this.selectedDate = newDate;
+    let date = new Date(this.selectedDate);
+    const newDate = this.getNextDate(date);
+
+    if (!isFuture(newDate) && newDate <= new Date()) {
+      this.selectedDate = newDate.toISOString().split('T')[0];
       this.emitDateChange();
+      this.updateDisplayPeriod();
     }
   }
 
-  getNextDate() {
+  getNextDate(date: Date): Date {
     switch (this.viewMode) {
       case 'day':
-        return addDays(this.selectedDate, 1);
+        return addDays(date, 1);
       case 'week':
-        return addWeeks(this.selectedDate, 1);
+        return addWeeks(date, 1);
       case 'month':
-        return addMonths(this.selectedDate, 1);
+        return addMonths(date, 1);
       case 'year':
-        return addYears(this.selectedDate, 1);
+        return addYears(date, 1);
       default:
-        return this.selectedDate;
+        return date;
     }
   }
 
-  goToToday() {
-    this.updateViewMode();
+  getPreviousDate(date: Date): Date {
+    switch (this.viewMode) {
+      case 'day':
+        return subDays(date, 1);
+      case 'week':
+        return subWeeks(date, 1);
+      case 'month':
+        return subMonths(date, 1);
+      case 'year':
+        return subYears(date, 1);
+      default:
+        return date;
+    }
+  }
+
+  canMoveBack(): boolean {
+    const date = new Date(this.selectedDate);
+    const startOfCurrentMonth = startOfMonth(new Date());
+    const startOfCurrentYear = startOfYear(new Date());
+    const twoYearsAgo = subYears(new Date(), 2);
+
+    switch (this.viewMode) {
+      case 'day':
+      case 'week':
+        return date > startOfCurrentMonth;
+      case 'month':
+        return date > startOfCurrentYear;
+      case 'year':
+        return date > twoYearsAgo;
+      default:
+        return true;
+    }
+  }
+
+  goToCurrentPeriod() {
+    this.selectedDate = new Date().toISOString().split('T')[0];
+    this.emitDateChange();
+    this.updateDisplayPeriod();
   }
 
   emitDateChange() {
-    this.dateChange.emit(this.selectedDate.toISOString().split('T')[0]);
+    this.dateChange.emit(this.selectedDate);
   }
 
-  isCurrentPeriod() {
+  isCurrentPeriod(): boolean {
+    const date = new Date(this.selectedDate);
     switch (this.viewMode) {
       case 'day':
-        return isTodayFn(this.selectedDate);
+        return isTodayFn(date);
       case 'week':
-        return isSameWeek(this.selectedDate, new Date(), { weekStartsOn: 1 });
+        return isSameWeek(date, new Date(), { weekStartsOn: 1 });
       case 'month':
-        return isSameMonth(this.selectedDate, new Date());
+        return isSameMonth(date, new Date());
       case 'year':
-        return isSameYear(this.selectedDate, new Date());
+        return isSameYear(date, new Date());
       default:
         return false;
     }
   }
 
-  displayDate() {
-    return this.formatService.formatDateForDisplay(this.selectedDate, this.viewMode);
+  updateDisplayPeriod() {
+    const date = new Date(this.selectedDate);
+    this.displayPeriod = this.formatService.getFormattedDisplayPeriod(date, this.viewMode);
+  }
+
+  getTooltip(): string {
+    switch (this.viewMode) {
+      case 'day':
+        return 'Go to Today';
+      case 'week':
+        return 'Go to This Week';
+      case 'month':
+        return 'Go to This Month';
+      case 'year':
+        return 'Go to This Year';
+      default:
+        return 'Go to Current Period';
+    }
   }
 }

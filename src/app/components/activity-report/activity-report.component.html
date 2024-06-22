@@ -13,7 +13,9 @@
   </ion-segment-button>
 </ion-segment>
 
-<app-date-navigator *ngIf="view !== 'day'" [viewMode]="view" (dateChange)="onDateChange($event)"></app-date-navigator>
+<app-date-navigator *ngIf="view !== 'day'" [viewMode]="view" [selectedDate]="selectedDate"
+  (dateChange)="onDateChange($event)">
+</app-date-navigator>
 
 <ion-card>
   <ion-card-content>

@@ -37,6 +37,36 @@ ion-content {
   margin: 0 20px;
 }
 
+ion-button {
+  --background: #4caf50;
+  /* Initial button background color */
+  --color: #ffffff;
+  /* Initial button text color */
+  --border-radius: 50%;
+  /* Make buttons circular */
+  outline: none;
+  box-shadow: none;
+
+  &:focus,
+  &:active {
+    --background: #4caf50 !important;
+    /* Ensure the background color stays the same on focus/active */
+    --color: #ffffff !important;
+    /* Ensure the text color stays the same on focus/active */
+    outline: none;
+    /* Remove default outline */
+    box-shadow: none;
+    /* Remove default box shadow */
+  }
+
+  &:disabled {
+    --background: #e0e0e0;
+    /* Disabled background color */
+    --color: #a0a0a0;
+    /* Disabled text color */
+  }
+}
+
 ion-button::part(native) {
   outline: none;
   box-shadow: none;
@@ -68,7 +98,10 @@ ion-icon {
 }
 
 .activity-report-title {
-  margin-top: 10px;
+  margin-top: 20px;
+  /* Adjusted to give more space above the title */
+  padding-top: 10px;
+  /* Added padding to ensure there is space */
   font-size: 18px;
   font-weight: bold;
   margin-bottom: 10px;
@@ -88,18 +121,31 @@ ion-icon {
 
 /* New Styles for Segment Buttons */
 ion-segment {
-  --background: var(--ion-color-light); // Matches the card background
-  --indicator-color: #4caf50; // Green color for the indicator
-  --button-background: #4a4a4a; // Background color of the buttons
-  --button-color: #ffffff; // Text color of the buttons
-  --button-background-checked: #2b2b2b; // Background color of the checked button
-  --button-color-checked: #ffffff; // Text color of the checked button
+  --background: var(--ion-color-light);
+  /* Matches the card background */
+  --indicator-color: #4caf50;
+  /* Green color for the indicator */
+  --button-background: #4a4a4a;
+  /* Background color of the buttons */
+  --button-color: #ffffff;
+  /* Text color of the buttons */
+  --button-background-checked: #2b2b2b;
+  /* Background color of the checked button */
+  --button-color-checked: #ffffff;
+  /* Text color of the checked button */
   margin-bottom: 16px;
+  justify-content: center;
 }
 
 ion-segment-button {
-  --background: #4a4a4a; // Background color of the buttons
-  --color: #ffffff; // Text color of the buttons
-  --background-checked: #2b2b2b; // Background color of the checked button
-  --color-checked: #ffffff; // Text color of the checked button
+  --background: #4a4a4a;
+  /* Background color of the buttons */
+  --color: #ffffff;
+  /* Text color of the buttons */
+  --background-checked: #2b2b2b;
+  /* Background color of the checked button */
+  --color-checked: #ffffff;
+  /* Text color of the checked button */
+  flex-grow: 1;
+  text-align: center;
 }

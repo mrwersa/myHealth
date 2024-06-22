@@ -88,3 +88,33 @@ ion-segment-button {
     --background-checked: #2b2b2b; // Background color of the checked button
     --color-checked: #ffffff; // Text color of the checked button
 }
+
+ion-button {
+    --background: #4caf50;
+    /* Initial button background color */
+    --color: #ffffff;
+    /* Initial button text color */
+    --border-radius: 50%;
+    /* Make buttons circular */
+    outline: none;
+    box-shadow: none;
+
+    &:focus,
+    &:active {
+        --background: #4caf50 !important;
+        /* Ensure the background color stays the same on focus/active */
+        --color: #ffffff !important;
+        /* Ensure the text color stays the same on focus/active */
+        outline: none;
+        /* Remove default outline */
+        box-shadow: none;
+        /* Remove default box shadow */
+    }
+
+    &:disabled {
+        --background: #e0e0e0;
+        /* Disabled background color */
+        --color: #a0a0a0;
+        /* Disabled text color */
+    }
+}

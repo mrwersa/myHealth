@@ -45,6 +45,8 @@ ion-segment {
     --button-color-checked: #ffffff;
     margin-bottom: 16px;
     border-radius: 8px;
+    display: flex;
+    justify-content: space-around;
 }
 
 ion-segment-button {
@@ -54,6 +56,10 @@ ion-segment-button {
     --color-checked: #ffffff;
     padding: 8px 16px;
     border-radius: 4px;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .date-navigator {

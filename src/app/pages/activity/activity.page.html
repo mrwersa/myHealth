@@ -1,6 +1,6 @@
 <ion-content class="ion-padding">
   <div class="date-navigator-container">
-    <app-date-navigator (dateChange)="onDateChange($event)"></app-date-navigator>
+    <app-date-navigator [viewMode]="'day'" (dateChange)="onDateChange($event)"></app-date-navigator>
   </div>
 
   <div class="activity-card">

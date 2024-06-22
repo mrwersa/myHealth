@@ -49,15 +49,7 @@ export class ActivityPage implements OnInit, OnDestroy {
         next: (data) => {
           this.metrics = this.mapActivityDataToMetrics(data);
           // Fetch Zone Minutes separately
-          const zoneMinutesSubscription = this.fitbitService.fetchActiveZoneMinutesTimeSeries(this.selectedDate, this.selectedDate).subscribe({
-            next: (zoneMinutesData) => {
-              const zoneMinutes = this.calculateZoneMinutes(zoneMinutesData);
-              const zoneMinutesMetric = this.createMetricDetail('Zone Minutes', 'zoneMinutes', 'timer-outline', zoneMinutes, data.goals.activeMinutes, 'min');
-              this.metrics.push(zoneMinutesMetric);
-            },
-            error: (err) => console.error('Error fetching zone minutes data:', err)
-          });
-          this.subscriptions.add(zoneMinutesSubscription);
+          this.loadZoneMinutesMetric(data.goals.activeMinutes);
         },
         error: (err) => console.error('Error fetching activity data:', err)
       });
@@ -77,7 +69,6 @@ export class ActivityPage implements OnInit, OnDestroy {
     });
     this.subscriptions.add(zoneMinutesSubscription);
   }
-  
 
   mapActivityDataToMetrics(data: Activity): ActivityDetail[] {
     if (!data || !data.summary) return [];
@@ -91,14 +82,57 @@ export class ActivityPage implements OnInit, OnDestroy {
   }
 
   createMetricDetail(title: string, type: string, icon: string, value: number | undefined, goal: number | undefined, unit: string): ActivityDetail {
+    const currentDate = this.getCurrentDateString();
+    const isToday = this.selectedDate === currentDate;
+    const goalAchieved = (value ?? 0) >= (goal ?? 0);
+    let details = '';
+
+    if (value !== undefined) {
+      if (goalAchieved) {
+        details = isToday
+          ? `Great job! You've achieved your ${title.toLowerCase()} goal for today with ${this.formatService.formatMetricValue(value, type, unit)}.`
+          : `Great job! You achieved your ${title.toLowerCase()} goal with ${this.formatService.formatMetricValue(value, type, unit)}.`;
+      } else {
+        const remaining = (goal ?? 0) - (value ?? 0);
+        switch (type) {
+          case 'steps':
+            details = isToday
+              ? `You have ${this.formatService.formatMetricValue(remaining, type, unit)} left to reach your step goal for today.`
+              : `You had ${this.formatService.formatMetricValue(remaining, type, unit)} left to reach your step goal.`;
+            break;
+          case 'caloriesOut':
+            details = isToday
+              ? `You need to burn ${this.formatService.formatMetricValue(remaining, type, unit)} more to reach your calorie goal for today.`
+              : `You needed to burn ${this.formatService.formatMetricValue(remaining, type, unit)} more to reach your calorie goal.`;
+            break;
+          case 'distance':
+            details = isToday
+              ? `You have ${this.formatService.formatMetricValue(remaining, type, unit)} left to cover to reach your distance goal for today.`
+              : `You had ${this.formatService.formatMetricValue(remaining, type, unit)} left to cover to reach your distance goal.`;
+            break;
+          case 'zoneMinutes':
+            details = isToday
+              ? `You have ${this.formatService.formatMetricValue(remaining, type, unit)} left to achieve your active zone minutes goal for today.`
+              : `You had ${this.formatService.formatMetricValue(remaining, type, unit)} left to achieve your active zone minutes goal.`;
+            break;
+          default:
+            details = isToday
+              ? `You have ${this.formatService.formatMetricValue(remaining, type, unit)} left to achieve your ${title.toLowerCase()} goal for today.`
+              : `You had ${this.formatService.formatMetricValue(remaining, type, unit)} left to achieve your ${title.toLowerCase()} goal.`;
+        }
+      }
+    } else {
+      details = `No data available for ${title.toLowerCase()}.`;
+    }
+
     return {
       title,
       value: value ?? 0,
       goal: goal ?? 0,
       unit,
       icon,
-      goalAchieved: (value ?? 0) >= (goal ?? 0),
-      details: value !== undefined ? `You have ${title.toLowerCase()} ${this.formatService.formatNumber(value, type)} ${unit}.` : `No data available for ${title.toLowerCase()}.`,
+      goalAchieved,
+      details,
       type
     };
   }
@@ -108,7 +142,7 @@ export class ActivityPage implements OnInit, OnDestroy {
       return 0;
     }
     const moderateZone = zoneMinutesData.find(zone => zone.dateTime === this.selectedDate);
-    return moderateZone ? parseFloat(moderateZone.value.activeZoneMinutes.toString()) : 0;
+    return moderateZone ? moderateZone.value.activeZoneMinutes : 0;
   }
 
   calculateTotalDistance(distances: { activity: string, distance: number }[]): number {

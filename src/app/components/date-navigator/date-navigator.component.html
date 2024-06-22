@@ -1,11 +1,12 @@
-<div class="date-navigator" [class.highlight]="isToday()">
-  <ion-button (click)="previousDay()">
+<div class="date-navigator" [class.highlight]="isCurrentPeriod()">
+  <ion-button (click)="previous()">
     <ion-icon name="arrow-back-circle"></ion-icon>
   </ion-button>
   <div class="date-text-container">
-    <span class="date-text" [class.today]="isToday()" [class.active]="isToday()">{{ displayDate() }}</span>
+    <span class="date-text" [class.today]="isCurrentPeriod()" [class.active]="isCurrentPeriod()">{{ displayDate()
+      }}</span>
   </div>
-  <ion-button *ngIf="!isToday()" (click)="nextDay()">
+  <ion-button *ngIf="!isCurrentPeriod()" (click)="next()">
     <ion-icon name="arrow-forward-circle"></ion-icon>
   </ion-button>
 </div>

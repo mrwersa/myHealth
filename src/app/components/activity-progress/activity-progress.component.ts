@@ -77,13 +77,7 @@ export class ActivityProgressComponent implements OnInit, OnChanges {
     }
   }
 
-  formatNumber(value: number, metricType: string): string {
-    return this.formatService.formatNumber(value, metricType);
-  }
-
-  private formatTime(value: number): string {
-    const hours = Math.floor(value / 60);
-    const minutes = Math.round(value % 60);
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  formatMetricValue(metricValue: number, metricType: string, metricUnit: string): string {
+    return this.formatService.formatMetricValue(metricValue, metricType, metricUnit);
   }
 }

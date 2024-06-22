@@ -13,13 +13,13 @@
   </ion-segment-button>
 </ion-segment>
 
+<app-date-navigator *ngIf="view !== 'day'" [viewMode]="view" (dateChange)="onDateChange($event)"></app-date-navigator>
+
 <ion-card>
   <ion-card-content>
-    <h2>Report</h2>
     <div *ngIf="view === 'day'">
       <div class="details-text">
-        <p><strong>Metric Value:</strong> {{ formatNumber(metric.value, metric.type) }} {{ metric.unit !== 'min' ?
-          metric.unit : '' }}</p>
+        <p><strong>Metric Value:</strong> {{ formatMetricValue(metric.value, metric.type, metric.unit) }}</p>
         <p><strong>Goal Achieved:</strong> {{ calculatePercentage(metric.value, metric.goal) }}%</p>
         <p><strong>Details:</strong> {{ metric.details }}</p>
       </div>

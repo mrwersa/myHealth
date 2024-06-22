@@ -128,7 +128,7 @@ export class FitbitService {
         dateTime: date.toISOString().split('T')[0],
         value: {
           activeZoneMinutes: faker.number.int({ min: 0, max: 60 }),
-          fatBurnActiveZoneMinutes: faker.number.int({ min: 0, max: 30 })
+          fatBurnActiveZoneMinutes: faker.number.int({ min: 0, max: 30 }),
         }
       });
     }
@@ -203,7 +203,7 @@ export class FitbitService {
     if (environment.test) {
       console.log('Environment is set to test, returning mock time series data');
       const daysDiff = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 3600 * 24));
-      const mockData = this.generateMockActiveZoneMinutesTimeSeries(daysDiff);
+      const mockData = this.generateMockActiveZoneMinutesTimeSeries(daysDiff + 1);
       return of(mockData);
     }
 
@@ -239,7 +239,7 @@ export class FitbitService {
     if (environment.test) {
       console.log('Environment is set to test, returning mock time series data');
       const daysDiff = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 3600 * 24));
-      const mockData = this.generateMockTimeSeriesData(daysDiff, activityType);
+      const mockData = this.generateMockTimeSeriesData(daysDiff + 1, activityType);
       return of(mockData);
     }
 

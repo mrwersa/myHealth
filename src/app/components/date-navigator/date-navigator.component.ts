@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Output, Input, OnChanges, SimpleChanges, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonButton, IonIcon, IonCard, IonCardContent } from '@ionic/angular/standalone';
-import { format, isToday as isTodayFn, subDays, addDays, subWeeks, addWeeks, subMonths, addMonths, subYears, addYears, startOfWeek, startOfMonth, startOfYear, isSameWeek, isSameMonth, isSameYear, isFuture, min, endOfWeek, endOfMonth, endOfYear, startOfDay } from 'date-fns';
+import { format, isToday as isTodayFn, subDays, addDays, subWeeks, addWeeks, subMonths, addMonths, subYears, addYears, startOfWeek, startOfMonth, startOfYear, isSameWeek, isSameMonth, isSameYear, isFuture, min, endOfWeek, endOfMonth, endOfYear, startOfDay, isSameDay } from 'date-fns';
 import { addIcons } from 'ionicons';
 import { arrowBackCircle, arrowForwardCircle, home } from 'ionicons/icons';
 import { FormatService } from '../../services/format.service';
@@ -23,9 +23,10 @@ addIcons({
 export class DateNavigatorComponent implements OnInit, OnChanges {
   @Output() dateChange = new EventEmitter<Date>();
   @Input() viewMode: 'day' | 'week' | 'month' | 'year' = 'day';
-  @Input() selectedDate: Date = new Date();
+  @Input() currentDate: Date = new Date();
 
   displayPeriod: string = '';
+  intercalSelectedDate!: Date;
 
   constructor(private formatService: FormatService, private localeService: LocaleService) { }
 
@@ -35,23 +36,24 @@ export class DateNavigatorComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['viewMode'] || changes['selectedDate']) {
+      this.intercalSelectedDate = this.currentDate;
       this.updateDisplayPeriod();
     }
   }
 
   previous() {
     if (this.canMoveBack()) {
-      this.selectedDate = this.getPreviousDate(this.selectedDate);
+      this.intercalSelectedDate = this.getPreviousDate(this.intercalSelectedDate);
       this.emitDateChange();
       this.updateDisplayPeriod();
     }
   }
 
   next() {
-    const newDate = this.getNextDate(this.selectedDate);
+    const newDate = this.getNextDate(this.intercalSelectedDate);
 
     if (!isFuture(newDate) && newDate <= new Date()) {
-      this.selectedDate = newDate;
+      this.intercalSelectedDate = newDate;
       this.emitDateChange();
       this.updateDisplayPeriod();
     }
@@ -62,11 +64,11 @@ export class DateNavigatorComponent implements OnInit, OnChanges {
       case 'day':
         return addDays(date, 1);
       case 'week':
-        return addWeeks(date, 1);
+        return min([this.currentDate, endOfWeek(addWeeks(date, 1))]);
       case 'month':
-        return addMonths(date, 1);
+        return min([this.currentDate, endOfMonth(addMonths(date, 1))]);
       case 'year':
-        return addYears(date, 1);
+        return min([this.currentDate, endOfYear(addYears(date, 1))]);
       default:
         return date;
     }
@@ -77,65 +79,64 @@ export class DateNavigatorComponent implements OnInit, OnChanges {
       case 'day':
         return subDays(date, 1);
       case 'week':
-        return subWeeks(date, 1);
+        return endOfWeek(subWeeks(date, 1));
       case 'month':
-        return subMonths(date, 1);
+        return endOfMonth(subMonths(date, 1));
       case 'year':
-        return subYears(date, 1);
+        return endOfYear(subYears(date, 1));
       default:
         return date;
     }
   }
 
   canMoveBack(): boolean {
-    const startOfCurrentMonth = startOfMonth(new Date());
-    const startOfCurrentYear = startOfYear(new Date());
-    const twoYearsAgo = startOfYear(subYears(new Date(), 2));
+    const startOfCurrentMonth = startOfMonth(this.currentDate);
+    const startOfCurrentYear = startOfYear(this.currentDate);
+    const twoYearsAgo = startOfYear(subYears(this.currentDate, 2));
 
     switch (this.viewMode) {
       case 'day':
-        return startOfDay(this.selectedDate) > startOfCurrentMonth;
+        return startOfDay(this.intercalSelectedDate) > startOfCurrentMonth;
       case 'week':
         // Check if the start of the week is within the current month
-        const startOfCurrentWeek = startOfWeek(this.selectedDate, { weekStartsOn: 1 });
+        const startOfCurrentWeek = startOfWeek(this.intercalSelectedDate, { weekStartsOn: 1 });
         return startOfCurrentWeek >= startOfCurrentMonth;
       case 'month':
-        return startOfMonth(this.selectedDate) > startOfCurrentYear;
+        return startOfMonth(this.intercalSelectedDate) > startOfCurrentYear;
       case 'year':
-        return startOfYear(this.selectedDate) > twoYearsAgo;
+        return startOfYear(this.intercalSelectedDate) > twoYearsAgo;
       default:
         return true;
     }
   }
 
   goToCurrentPeriod() {
-    this.selectedDate = new Date();
+    this.intercalSelectedDate = this.currentDate;
     this.emitDateChange();
     this.updateDisplayPeriod();
   }
 
   emitDateChange() {
-    this.dateChange.emit(this.selectedDate);
+    this.dateChange.emit(this.intercalSelectedDate);
   }
 
   isCurrentPeriod(): boolean {
-    const date = new Date(this.selectedDate);
     switch (this.viewMode) {
       case 'day':
-        return isTodayFn(date);
+        return isSameDay(this.intercalSelectedDate, this.currentDate);
       case 'week':
-        return isSameWeek(date, new Date(), { weekStartsOn: 1 });
+        return isSameWeek(this.intercalSelectedDate, this.currentDate, { weekStartsOn: 1 });
       case 'month':
-        return isSameMonth(date, new Date());
+        return isSameMonth(this.intercalSelectedDate, this.currentDate);
       case 'year':
-        return isSameYear(date, new Date());
+        return isSameYear(this.intercalSelectedDate, this.currentDate);
       default:
         return false;
     }
   }
 
   updateDisplayPeriod() {
-    this.displayPeriod = this.formatService.getFormattedDisplayPeriod(this.selectedDate, this.viewMode);
+    this.displayPeriod = this.formatService.getFormattedDisplayPeriod(this.intercalSelectedDate, this.viewMode);
   }
 
   getTooltip(): string {

@@ -27,7 +27,6 @@ export class ActivityReportComponent implements OnChanges, OnInit {
 
   view: SegmentValue = 'day';
 
-
   barChartOptions: ChartOptions = {
     responsive: true,
     plugins: {
@@ -104,6 +103,7 @@ export class ActivityReportComponent implements OnChanges, OnInit {
   changeView(event: CustomEvent<SegmentChangeEventDetail>) {
     const value = event.detail.value as SegmentValue;
     this.view = value;
+    this.reportSelectedDate = this.selectedDate;
     this.checkAndLoadReportData(); // Ensure data is re-fetched or re-processed
   }
 
@@ -262,7 +262,7 @@ export class ActivityReportComponent implements OnChanges, OnInit {
       const dayData = data.find(d => d.dateTime === isoDateString);
       return dayData ? parseFloat(dayData.value) : 0;
     });
-    const selectedIndex = weekDates.findIndex(date => date.toISOString().split('T')[0] === this.reportSelectedDate.toISOString().split('T')[0]);
+    const selectedIndex = weekDates.findIndex(date => date.toISOString().split('T')[0] === this.selectedDate.toISOString().split('T')[0]);
     this.barChartData = {
       labels: this.barChartLabels,
       datasets: [
@@ -288,7 +288,7 @@ export class ActivityReportComponent implements OnChanges, OnInit {
       const dayData = data.find(d => d.dateTime === date);
       return dayData ? parseFloat(dayData.value) : 0;
     });
-    const selectedIndex = this.reportSelectedDate.getDate() - 1;
+    const selectedIndex = this.selectedDate.getDate() - 1;
     this.barChartData = {
       labels: this.barChartLabels,
       datasets: [
@@ -380,7 +380,6 @@ export class ActivityReportComponent implements OnChanges, OnInit {
             borderColor: 'red',
             borderWidth: 2,
             label: {
-              content: 'Selected',
               position: 'end',
               display: true
             }

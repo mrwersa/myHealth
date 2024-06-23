@@ -210,4 +210,8 @@ export class ActivityPage implements OnInit, OnDestroy {
       this.refresher.complete();
     }, 2000);
   }
+
+  getFormatedReportDate() {
+    return this.formatService.getFormattedDisplayPeriod(this.selectedDate, "day");
+  }
 }

@@ -8,23 +8,26 @@
   </ion-refresher>
 
   <div class="activity-card">
-    <div class="activity-card-header">
+    <div class="activity-card-content">
+      <app-activity-progress [metric]="currentMetric"></app-activity-progress>
+    </div>
+
+    <div class="activity-card-footer">
       <ion-button (click)="prevMetric()" [disabled]="currentMetricIndex === 0">
         <ion-icon name="arrow-back-circle"></ion-icon>
       </ion-button>
+
       <div class="activity-title">{{ currentMetric.title }}</div>
+
       <ion-button (click)="nextMetric()" [disabled]="currentMetricIndex === metrics.length - 1">
         <ion-icon name="arrow-forward-circle"></ion-icon>
       </ion-button>
-    </div>
-    <div class="activity-card-content">
-      <app-activity-progress [metric]="currentMetric"></app-activity-progress>
     </div>
   </div>
 
   <div class="activity-report-card">
     <div class="activity-report-title">Report</div>
-    <div class="activity-report-sub-title">{{currentMetric.title}}</div>
+    <div class="activity-report-sub-title">{{getFormatedReportDate()}}</div>
     <div class="activity-report-content">
       <app-activity-report [metric]="currentMetric" [selectedDate]="selectedDate"></app-activity-report>
     </div>

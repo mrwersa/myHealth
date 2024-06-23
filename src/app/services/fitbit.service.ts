@@ -148,7 +148,7 @@ export class FitbitService {
 
     try {
       const headers = this.getHeaders();
-      const url = `${environment.fitbitApiBaseUrl}/activities/date/${date}.json`;
+      const url = `${environment.fitbitApiBaseUrl}/activities/date/${date}.json?timezone=UTC`;
       console.log(`Making GET request to URL: ${url}`);
 
       return this.http.get<any>(url, { headers }).pipe(
@@ -201,6 +201,7 @@ export class FitbitService {
     }
   }
 
+
   fetchActiveZoneMinutesTimeSeries(startDate: string, endDate: string): Observable<ActiveZoneMinutes[]> {
     console.log(`Fetching active zone minutes time series for start date: ${startDate}, end date: ${endDate}`);
     if (environment.test) {
@@ -211,7 +212,7 @@ export class FitbitService {
 
     try {
       const headers = this.getHeaders();
-      const url = `${environment.fitbitApiBaseUrl}/activities/active-zone-minutes/date/${startDate}/${endDate}.json`;
+      const url = `${environment.fitbitApiBaseUrl}/activities/active-zone-minutes/date/${startDate}/${endDate}.json?timezone=UTC`;
       console.log(`Making GET request to URL: ${url}`);
 
       return this.http.get<any>(url, { headers }).pipe(
@@ -253,7 +254,7 @@ export class FitbitService {
 
     try {
       const headers = this.getHeaders();
-      const url = `${environment.fitbitApiBaseUrl}/activities/${activityType}/date/${startDate}/${endDate}.json`;
+      const url = `${environment.fitbitApiBaseUrl}/activities/${activityType}/date/${startDate}/${endDate}.json?timezone=UTC`;
       console.log(`Making GET request to URL: ${url}`);
 
       return this.http.get<any>(url, { headers }).pipe(

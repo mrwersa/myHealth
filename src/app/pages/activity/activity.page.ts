@@ -9,6 +9,8 @@ import { FitbitService } from '../../services/fitbit.service';
 import { ActivityDetail, Activity, ActiveZoneMinutes } from '../../models/activity.model';
 import { FormatService } from '../../services/format.service';
 import { Subscription } from 'rxjs';
+import { LocaleService } from '../../services/locale.service';
+import { isToday } from 'date-fns';
 
 @Component({
   selector: 'app-activity',
@@ -23,8 +25,7 @@ import { Subscription } from 'rxjs';
 export class ActivityPage implements OnInit, OnDestroy {
   metrics: ActivityDetail[] = [];
   currentMetricIndex = 0;
-  selectedDate: string = this.getCurrentDateString();
-  view: 'day' | 'week' | 'month' | 'year' = 'day';  // Add the 'view' property here
+  selectedDate: Date = new Date();
   private subscriptions: Subscription = new Subscription();
 
   @ViewChild(IonInfiniteScroll) infiniteScroll!: IonInfiniteScroll;
@@ -38,7 +39,7 @@ export class ActivityPage implements OnInit, OnDestroy {
     };
   }
 
-  constructor(private fitbitService: FitbitService, private formatService: FormatService) { }
+  constructor(private fitbitService: FitbitService, private formatService: FormatService, private localeService: LocaleService) { }
 
   ngOnInit() {
     this.loadMetrics();
@@ -50,7 +51,8 @@ export class ActivityPage implements OnInit, OnDestroy {
 
   loadMetrics() {
     if (this.selectedDate) {
-      const subscription = this.fitbitService.fetchActivityAndGoals(this.selectedDate).subscribe({
+      const startDateIsoStr = this.selectedDate.toISOString().split('T')[0];
+      const subscription = this.fitbitService.fetchActivityAndGoals(startDateIsoStr).subscribe({
         next: (data) => {
           this.metrics = this.mapActivityDataToMetrics(data);
           // Fetch Zone Minutes separately
@@ -75,10 +77,15 @@ export class ActivityPage implements OnInit, OnDestroy {
   }
 
   loadZoneMinutesMetric(activeMinutesGoal: number) {
-    const endDate = this.selectedDate || this.getCurrentDateString();
-    const zoneMinutesSubscription = this.fitbitService.fetchActiveZoneMinutesTimeSeries(this.selectedDate, endDate).subscribe({
+    const endDate = this.selectedDate;
+    const endDateIsoStr = new Date(endDate).toISOString().split('T')[0];
+    const startDateIsoStr = this.selectedDate.toISOString().split('T')[0];
+    const zoneMinutesSubscription = this.fitbitService.fetchActiveZoneMinutesTimeSeries(startDateIsoStr, endDateIsoStr).subscribe({
       next: (zoneMinutesData) => {
-        const zoneMinutes = this.calculateZoneMinutes(zoneMinutesData);
+        const zoneMinutes = this.calculateZoneMinutes(zoneMinutesData.map(entry => ({
+          ...entry,
+          dateTime: new Date(entry.dateTime).toLocaleDateString(this.localeService.getLocale())
+        })));
         const zoneMinutesMetric = this.createMetricDetail('Zone Minutes', 'zoneMinutes', 'timer-outline', zoneMinutes, activeMinutesGoal, 'min');
         this.metrics.push(zoneMinutesMetric);
       },
@@ -86,6 +93,7 @@ export class ActivityPage implements OnInit, OnDestroy {
     });
     this.subscriptions.add(zoneMinutesSubscription);
   }
+
 
   mapActivityDataToMetrics(data: Activity): ActivityDetail[] {
     if (!data || !data.summary) return [];
@@ -99,41 +107,39 @@ export class ActivityPage implements OnInit, OnDestroy {
   }
 
   createMetricDetail(title: string, type: string, icon: string, value: number | undefined, goal: number | undefined, unit: string): ActivityDetail {
-    const currentDate = this.getCurrentDateString();
-    const isToday = this.selectedDate === currentDate;
     const goalAchieved = (value ?? 0) >= (goal ?? 0);
     let details = '';
 
     if (value !== undefined) {
       if (goalAchieved) {
-        details = isToday
+        details = isToday(this.selectedDate)
           ? `Great job! You've achieved your ${title.toLowerCase()} goal for today with ${this.formatService.formatMetricValue(value, type, unit)}.`
           : `Great job! You achieved your ${title.toLowerCase()} goal with ${this.formatService.formatMetricValue(value, type, unit)}.`;
       } else {
         const remaining = (goal ?? 0) - (value ?? 0);
         switch (type) {
           case 'steps':
-            details = isToday
+            details = isToday(this.selectedDate)
               ? `You have ${this.formatService.formatMetricValue(remaining, type, unit)} left to reach your step goal for today.`
               : `You had ${this.formatService.formatMetricValue(remaining, type, unit)} left to reach your step goal.`;
             break;
           case 'caloriesOut':
-            details = isToday
+            details = isToday(this.selectedDate)
               ? `You need to burn ${this.formatService.formatMetricValue(remaining, type, unit)} more to reach your calorie goal for today.`
               : `You needed to burn ${this.formatService.formatMetricValue(remaining, type, unit)} more to reach your calorie goal.`;
             break;
           case 'distance':
-            details = isToday
+            details = isToday(this.selectedDate)
               ? `You have ${this.formatService.formatMetricValue(remaining, type, unit)} left to cover to reach your distance goal for today.`
               : `You had ${this.formatService.formatMetricValue(remaining, type, unit)} left to cover to reach your distance goal.`;
             break;
           case 'zoneMinutes':
-            details = isToday
+            details = isToday(this.selectedDate)
               ? `You have ${this.formatService.formatMetricValue(remaining, type, unit)} left to achieve your active zone minutes goal for today.`
               : `You had ${this.formatService.formatMetricValue(remaining, type, unit)} left to achieve your active zone minutes goal.`;
             break;
           default:
-            details = isToday
+            details = isToday(this.selectedDate)
               ? `You have ${this.formatService.formatMetricValue(remaining, type, unit)} left to achieve your ${title.toLowerCase()} goal for today.`
               : `You had ${this.formatService.formatMetricValue(remaining, type, unit)} left to achieve your ${title.toLowerCase()} goal.`;
         }
@@ -158,7 +164,7 @@ export class ActivityPage implements OnInit, OnDestroy {
     if (!zoneMinutesData || zoneMinutesData.length === 0) {
       return 0;
     }
-    const moderateZone = zoneMinutesData.find(zone => zone.dateTime === this.selectedDate);
+    const moderateZone = zoneMinutesData.find(zone => zone.dateTime === this.selectedDate.toISOString().split('T')[0]);
     return moderateZone ? moderateZone.value.activeZoneMinutes : 0;
   }
 
@@ -168,7 +174,7 @@ export class ActivityPage implements OnInit, OnDestroy {
 
   getCurrentDateString(): string {
     const today = new Date();
-    return today.toISOString().split('T')[0];
+    return today.toLocaleDateString(this.localeService.getLocale())
   }
 
   onDateChange(event: any) {
@@ -177,11 +183,15 @@ export class ActivityPage implements OnInit, OnDestroy {
   }
 
   prevMetric() {
-    if (this.currentMetricIndex > 0) this.currentMetricIndex--;
+    if (this.currentMetricIndex > 0) {
+      this.currentMetricIndex--;
+    }
   }
 
   nextMetric() {
-    if (this.currentMetricIndex < this.metrics.length - 1) this.currentMetricIndex++;
+    if (this.currentMetricIndex < this.metrics.length - 1) {
+      this.currentMetricIndex++;
+    }
   }
 
   onScroll(event: any) {

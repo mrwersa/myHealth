@@ -5,10 +5,11 @@ import { ChartOptions, ChartType, ChartData } from 'chart.js';
 import { IonCard, IonCardContent, IonSegment, IonSegmentButton, IonLabel, IonContent } from '@ionic/angular/standalone';
 import { FitbitService } from '../../services/fitbit.service';
 import { FormatService } from '../../services/format.service';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, min } from 'date-fns';
+import { endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, min, lastDayOfMonth, getDate, startOfWeek, addDays } from 'date-fns';
 import { ActivityDetail, ActiveZoneMinutes, ActivityTimeSeries } from '../../models/activity.model';
 import { SegmentChangeEventDetail } from '@ionic/core';
 import { DateNavigatorComponent } from '../date-navigator/date-navigator.component'; // Import the navigator component
+import { LocaleService } from '../../services/locale.service'
 
 type SegmentValue = 'day' | 'week' | 'month' | 'year';
 
@@ -21,10 +22,11 @@ type SegmentValue = 'day' | 'week' | 'month' | 'year';
 })
 export class ActivityReportComponent implements OnChanges, OnInit {
   @Input() metric!: ActivityDetail;
-  @Input() selectedDate!: string;
+  @Input() selectedDate!: Date;
   @ViewChild(BaseChartDirective) chart!: BaseChartDirective;
 
   view: SegmentValue = 'day';
+
 
   barChartOptions: ChartOptions = {
     responsive: true,
@@ -43,6 +45,18 @@ export class ActivityReportComponent implements OnChanges, OnInit {
             borderDash: [5, 5],
             label: {
               content: 'Goal',
+              position: 'end',
+              display: true
+            }
+          },
+          selectedDateLine: {
+            type: 'line',
+            scaleID: 'x',
+            value: 0,
+            borderColor: 'red',
+            borderWidth: 2,
+            label: {
+              content: 'Selected',
               position: 'end',
               display: true
             }
@@ -66,19 +80,23 @@ export class ActivityReportComponent implements OnChanges, OnInit {
 
   bestMetric: number = 0;
   metricValue: number = 0;
+  reportSelectedDate!: Date;
   initializing: boolean = true;
 
-  constructor(private fitbitService: FitbitService, private formatService: FormatService) { }
+  constructor(private fitbitService: FitbitService, private formatService: FormatService, private localeService: LocaleService) { }
 
   ngOnInit() {
     if (this.metric && this.selectedDate) {
+      this.reportSelectedDate = this.selectedDate;
       this.checkAndLoadReportData();
       this.initializing = false; // Set initializing to false after initial load
     }
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (!this.initializing && ((changes['metric'] && this.metric) || (changes['selectedDate'] && this.selectedDate))) {
+    if (!this.initializing && ((changes['metric'] && this.metric) || (changes['selectedDate'] && this.selectedDate) || changes['view'])) {
+      this.view = 'day';
+      this.reportSelectedDate = this.selectedDate;
       this.checkAndLoadReportData();
     }
   }
@@ -86,39 +104,64 @@ export class ActivityReportComponent implements OnChanges, OnInit {
   changeView(event: CustomEvent<SegmentChangeEventDetail>) {
     const value = event.detail.value as SegmentValue;
     this.view = value;
-    this.selectedDate = new Date().toISOString().split('T')[0]; // Reset to current date
     this.checkAndLoadReportData(); // Ensure data is re-fetched or re-processed
   }
 
-  onDateChange(date: string) {
-    this.selectedDate = date;
+  onDateChange(date: Date) {
+    this.reportSelectedDate = date;
     this.checkAndLoadReportData(); // Ensure data is re-fetched or re-processed
   }
 
   checkAndLoadReportData() {
-    if (this.metric && this.selectedDate) {
+    if (this.metric && this.selectedDate && this.reportSelectedDate) {
       this.loadReportData(); // Ensure data is fetched for the selected view
     }
   }
 
   loadReportData() {
-    const currentDate = new Date();
     let endDate: Date;
     let startDate: Date;
 
     switch (this.view) {
       case 'week':
-        startDate = startOfWeek(new Date(this.selectedDate), { weekStartsOn: 1 });
-        endDate = min([endOfWeek(new Date(this.selectedDate), { weekStartsOn: 1 }), currentDate]);
+        let weekStartDate = startOfWeek(this.reportSelectedDate, { weekStartsOn: 1 });
+        weekStartDate.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes());
+
+        const weekEndDate = endOfWeek(this.reportSelectedDate, { weekStartsOn: 1 });
+        weekEndDate.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes());
+
+        // If the start date of the week is in the previous month, set it to the start of the current month
+        startDate = weekStartDate.getMonth() !== this.reportSelectedDate.getMonth()
+          ? startOfMonth(this.reportSelectedDate)
+          : weekStartDate;
+        startDate.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes());
+
+        // If the end date of the week is in the next month, set it to the end of the current month
+        endDate = weekEndDate.getMonth() !== this.reportSelectedDate.getMonth()
+          ? endOfMonth(this.reportSelectedDate)
+          : weekEndDate;
+
+        // Make sure endDate is not in the future
+        endDate = min([endDate, this.selectedDate]);
+        endDate.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes());
         break;
+
       case 'month':
-        startDate = startOfMonth(new Date(this.selectedDate));
-        endDate = min([endOfMonth(new Date(this.selectedDate)), currentDate]);
+        startDate = startOfMonth(this.reportSelectedDate);
+        startDate.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes());
+
+        endDate = min([endOfMonth(this.reportSelectedDate), this.selectedDate]);
+        endDate.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes());
         break;
+
       case 'year':
-        startDate = startOfYear(new Date(this.selectedDate));
-        endDate = min([endOfYear(new Date(this.selectedDate)), currentDate]);
+        startDate = startOfYear(this.reportSelectedDate);
+        startDate.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes());
+
+        endDate = min([endOfYear(this.reportSelectedDate), this.selectedDate]);
+        endDate.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes());
         break;
+
       case 'day':
       default:
         // For day view, no data is fetched
@@ -189,114 +232,159 @@ export class ActivityReportComponent implements OnChanges, OnInit {
 
   updateChart(data: ActivityTimeSeries[]) {
     let reportTitle = '';
+    let selectedIndex: number | undefined;
 
     if (this.view === 'week') {
-      const weekStartDate = this.getStartOfWeek(new Date(this.selectedDate || new Date()));
-      const weekDates = Array.from({ length: 7 }, (_, i) => new Date(weekStartDate.getTime() + i * 24 * 60 * 60 * 1000));
-      this.barChartLabels = weekDates.map(date => date.toLocaleDateString('default', { weekday: 'short' }).charAt(0).toUpperCase());
-      const weekData = weekDates.map(date => {
-        const dayData = data.find(d => new Date(d.dateTime).toDateString() === date.toDateString());
-        return dayData ? parseFloat(dayData.value) : 0;
-      });
-      this.barChartData = {
-        labels: this.barChartLabels,
-        datasets: [
-          {
-            data: weekData,
-            backgroundColor: (context: any) => {
-              const value = context.raw;
-              const goalValue = this.metric.goal;
-              return value >= goalValue ? getComputedStyle(document.documentElement).getPropertyValue('--achieved-color') : getComputedStyle(document.documentElement).getPropertyValue('--not-achieved-color');
-            }
-          }
-        ]
-      };
-      reportTitle = 'Weekly Report';
+      ({ reportTitle, selectedIndex } = this.updateWeekView(data));
     } else if (this.view === 'month') {
-      const currentMonth = new Date(this.selectedDate).getMonth();
-      const daysInMonth = new Date(new Date(this.selectedDate).getFullYear(), currentMonth + 1, 0).getDate();
-      this.barChartLabels = Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString());
-      const monthData = Array.from({ length: daysInMonth }, (_, i) => {
-        const day = i + 1;
-        const dayData = data.find(d => new Date(d.dateTime).getDate() === day);
-        return dayData ? parseFloat(dayData.value) : 0;
-      });
-      this.barChartData = {
-        labels: this.barChartLabels,
-        datasets: [
-          {
-            data: monthData,
-            backgroundColor: (context: any) => {
-              const value = context.raw;
-              const goalValue = this.metric.goal;
-              return value >= goalValue ? getComputedStyle(document.documentElement).getPropertyValue('--achieved-color') : getComputedStyle(document.documentElement).getPropertyValue('--not-achieved-color');
-            }
-          }
-        ]
-      };
-      reportTitle = 'Monthly Report';
+      ({ reportTitle, selectedIndex } = this.updateMonthView(data));
     } else if (this.view === 'year') {
-      const selectedYear = new Date(this.selectedDate).getFullYear();
-      const monthsInYear = 12;
-      this.barChartLabels = Array.from({ length: monthsInYear }, (_, i) => new Date(selectedYear, i).toLocaleString('default', { month: 'short' }).charAt(0).toUpperCase());
-      const yearData = Array.from({ length: monthsInYear }, (_, i) => {
-        const monthData = data.find(d => d.dateTime.startsWith(`${selectedYear}-${(i + 1).toString().padStart(2, '0')}`));
-        return monthData ? parseFloat(monthData.value) : 0;
-      });
-      this.barChartData = {
-        labels: this.barChartLabels,
-        datasets: [
-          {
-            data: yearData,
-            backgroundColor: (context: any) => {
-              const value = context.raw;
-              const goalValue = this.metric.goal;
-              return value >= goalValue ? getComputedStyle(document.documentElement).getPropertyValue('--achieved-color') : getComputedStyle(document.documentElement).getPropertyValue('--not-achieved-color');
-            }
-          }
-        ]
-      };
-      reportTitle = 'Yearly Report';
-    } else {
-      this.barChartLabels = data.map((entry, index) => `Day ${index + 1}`);
-      this.barChartData = {
-        labels: this.barChartLabels,
-        datasets: [
-          {
-            data: data.map(entry => parseFloat(entry.value)),
-            backgroundColor: (context: any) => {
-              const value = context.raw;
-              const goalValue = this.metric.goal;
-              return value >= goalValue ? getComputedStyle(document.documentElement).getPropertyValue('--achieved-color') : getComputedStyle(document.documentElement).getPropertyValue('--not-achieved-color');
-            }
-          }
-        ]
-      };
-      reportTitle = 'Daily Report';
+      ({ reportTitle, selectedIndex } = this.updateYearView(data));
     }
 
-    // Update the chart options for tooltips
+    this.updateChartOptions(selectedIndex, reportTitle);
+
+    if (this.chart) {
+      this.chart.update();
+    }
+  }
+
+  updateWeekView(data: ActivityTimeSeries[]) {
+    let weekStartDate = startOfWeek(new Date(this.reportSelectedDate || new Date()), { weekStartsOn: 1 });
+
+    // Adjust weekStartDate to current time to avoid timezone issues
+    weekStartDate.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes());
+
+    const weekDates = Array.from({ length: 7 }, (_, i) => new Date(weekStartDate.getTime() + i * 24 * 60 * 60 * 1000));
+    this.barChartLabels = weekDates.map(date => date.toLocaleDateString(this.localeService.getLocale(), { weekday: 'short' }).slice(0, 3));
+    const weekData = weekDates.map(date => {
+      const isoDateString = date.toISOString().split('T')[0];
+      const dayData = data.find(d => d.dateTime === isoDateString);
+      return dayData ? parseFloat(dayData.value) : 0;
+    });
+    const selectedIndex = weekDates.findIndex(date => date.toISOString().split('T')[0] === this.reportSelectedDate.toISOString().split('T')[0]);
+    this.barChartData = {
+      labels: this.barChartLabels,
+      datasets: [
+        {
+          data: weekData,
+          backgroundColor: (context: any) => {
+            const value = context.raw;
+            const goalValue = this.metric.goal;
+            return value >= goalValue ? getComputedStyle(document.documentElement).getPropertyValue('--achieved-color') : getComputedStyle(document.documentElement).getPropertyValue('--not-achieved-color');
+          }
+        }
+      ]
+    };
+    return { reportTitle: 'Weekly Report', selectedIndex };
+  }
+
+  updateMonthView(data: ActivityTimeSeries[]) {
+    const currentMonth = this.reportSelectedDate.getMonth();
+    const daysInMonth = new Date(this.reportSelectedDate.getFullYear(), currentMonth + 1, 0).getDate();
+    this.barChartLabels = Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString());
+    const monthData = Array.from({ length: daysInMonth }, (_, day) => {
+      const date = addDays(startOfMonth(this.reportSelectedDate).setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes()), day).toISOString().split('T')[0];
+      const dayData = data.find(d => d.dateTime === date);
+      return dayData ? parseFloat(dayData.value) : 0;
+    });
+    const selectedIndex = this.reportSelectedDate.getDate() - 1;
+    this.barChartData = {
+      labels: this.barChartLabels,
+      datasets: [
+        {
+          data: monthData,
+          backgroundColor: (context: any) => {
+            const value = context.raw;
+            const goalValue = this.metric.goal;
+            return value >= goalValue ? getComputedStyle(document.documentElement).getPropertyValue('--achieved-color') : getComputedStyle(document.documentElement).getPropertyValue('--not-achieved-color');
+          }
+        }
+      ]
+    };
+    return { reportTitle: 'Monthly Report', selectedIndex };
+  }
+
+  updateYearView(data: ActivityTimeSeries[]) {
+    const selectedYear = this.reportSelectedDate.getFullYear();
+    const monthsInYear = 12;
+    this.barChartLabels = Array.from({ length: monthsInYear }, (_, i) => new Date(selectedYear, i).toLocaleString(this.localeService.getLocale(), { month: 'short' }).slice(0, 3));
+    const yearData = Array.from({ length: monthsInYear }, (_, i) => {
+      const monthData = data.find(d => d.dateTime.startsWith(`${selectedYear}-${(i + 1).toString().padStart(2, '0')}`));
+      return monthData ? parseFloat(monthData.value) : 0;
+    });
+    const selectedIndex = this.reportSelectedDate.getMonth();
+    this.barChartData = {
+      labels: this.barChartLabels,
+      datasets: [
+        {
+          data: yearData,
+          backgroundColor: (context: any) => {
+            const value = context.raw;
+            const goalValue = this.metric.goal;
+            return value >= goalValue ? getComputedStyle(document.documentElement).getPropertyValue('--achieved-color') : getComputedStyle(document.documentElement).getPropertyValue('--not-achieved-color');
+          }
+        }
+      ]
+    };
+    return { reportTitle: 'Yearly Report', selectedIndex };
+  }
+
+  updateChartOptions(selectedIndex: number | undefined, reportTitle: string) {
+    let showSelectedDateLine = false;
+
+    if (this.view === 'week') {
+      const weekStartDate = startOfWeek(this.reportSelectedDate, { weekStartsOn: 1 });
+      const weekEndDate = endOfWeek(this.reportSelectedDate, { weekStartsOn: 1 });
+      showSelectedDateLine = this.selectedDate >= weekStartDate && this.selectedDate <= weekEndDate;
+    } else if (this.view === 'month') {
+      const startOfMonthDate = startOfMonth(this.reportSelectedDate);
+      const endOfMonthDate = endOfMonth(this.reportSelectedDate);
+      showSelectedDateLine = this.selectedDate >= startOfMonthDate && this.selectedDate <= endOfMonthDate;
+    } else if (this.view === 'year') {
+      const startOfYearDate = startOfYear(this.reportSelectedDate);
+      const endOfYearDate = endOfYear(this.reportSelectedDate);
+      showSelectedDateLine = this.selectedDate >= startOfYearDate && this.selectedDate <= endOfYearDate;
+    }
+
     this.barChartOptions.plugins = {
       ...this.barChartOptions.plugins,
       tooltip: {
         callbacks: {
           title: (tooltipItems: any) => {
             const item = tooltipItems[0];
-            const date = new Date(this.selectedDate);
+            const date = this.reportSelectedDate;
             if (this.view === 'week') {
-              const weekStartDate = this.getStartOfWeek(date);
+              const weekStartDate = startOfWeek(date, { weekStartsOn: 1 });
               const tooltipDate = new Date(weekStartDate.getTime() + item.dataIndex * 24 * 60 * 60 * 1000);
-              return tooltipDate.toLocaleDateString('default', { weekday: 'short', day: 'numeric', month: 'short' });
+              return tooltipDate.toLocaleDateString(this.localeService.getLocale(), { weekday: 'short', day: 'numeric', month: 'short' });
             } else if (this.view === 'month') {
-              return new Date(date.getFullYear(), date.getMonth(), item.dataIndex + 1).toLocaleDateString('default', { weekday: 'short', day: 'numeric', month: 'short' });
+              return new Date(date.getFullYear(), date.getMonth(), item.dataIndex + 1).toLocaleDateString(this.localeService.getLocale(), { weekday: 'short', day: 'numeric', month: 'short' });
             } else if (this.view === 'year') {
-              return new Date(date.getFullYear(), item.dataIndex).toLocaleString('default', { month: 'long' });
+              return new Date(date.getFullYear(), item.dataIndex).toLocaleString(this.localeService.getLocale(), { month: 'long' });
             }
             return '';
           },
           label: (tooltipItem: any) => {
             return `Value: ${tooltipItem.raw}`;
           }
+        }
+      },
+      annotation: {
+        annotations: {
+          ...this.barChartOptions.plugins?.annotation?.annotations,
+          selectedDateLine: showSelectedDateLine && selectedIndex !== undefined ? {
+            type: 'line',
+            scaleID: 'x',
+            value: selectedIndex,
+            borderColor: 'red',
+            borderWidth: 2,
+            label: {
+              content: 'Selected',
+              position: 'end',
+              display: true
+            }
+          } : undefined
         }
       }
     };
@@ -314,46 +402,53 @@ export class ActivityReportComponent implements OnChanges, OnInit {
       }
     }
 
+    // Ensure the chart updates with the new annotation
     if (this.chart) {
       this.chart.update();
     }
-
-    console.log('Final barChartData:', this.barChartData); // Added for debugging
   }
 
+
   fillWeekData(data: ActivityTimeSeries[]): ActivityTimeSeries[] {
-    const startOfWeek = this.getStartOfWeek(new Date(this.selectedDate));
-    const weekData = Array(7).fill(0).map((_, i) => {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      const dayData = data.find(d => new Date(d.dateTime).toDateString() === date.toDateString());
+    const weekStartDate = startOfWeek(this.reportSelectedDate, { weekStartsOn: 1 });
+    const weekEndDate = endOfWeek(this.reportSelectedDate, { weekStartsOn: 1 });
+
+    // Adjust weekStartDate and weekEndDate to report selected time to avoid timezone issues
+    weekStartDate.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes());
+    weekEndDate.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes());
+
+    const weekData = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(weekStartDate);
+      date.setDate(weekStartDate.getDate() + i);
+      const isoDateString = date.toISOString().split('T')[0];
+      const dayData = data.find(d => d.dateTime === isoDateString);
       return {
-        dateTime: date.toISOString().split('T')[0],
+        dateTime: isoDateString,
         value: dayData ? dayData.value : '0'  // Ensure value is a string
       };
     });
+
     return weekData;
   }
 
   fillMonthData(data: ActivityTimeSeries[]): ActivityTimeSeries[] {
-    const currentMonth = new Date(this.selectedDate).getMonth();
-    const daysInMonth = new Date(new Date(this.selectedDate).getFullYear(), currentMonth + 1, 0).getDate();
-    const monthData = Array(daysInMonth).fill(0).map((_, i) => {
-      const date = new Date(new Date(this.selectedDate).getFullYear(), currentMonth, i + 1);
-      const dayData = data.find(d => new Date(d.dateTime).toDateString() === date.toDateString());
+    const currentMonth = this.reportSelectedDate.getMonth();
+    const daysInMonth = new Date(this.reportSelectedDate.getFullYear(), currentMonth + 1, 0).getDate();
+    const monthData = Array.from({ length: daysInMonth }, (_, i) => {
+      const date = addDays(startOfMonth(this.reportSelectedDate), i);
+      date.setHours(this.reportSelectedDate.getHours(), this.reportSelectedDate.getMinutes())
+      const isoDateString = date.toISOString().split('T')[0];
+
+      const dayData = data.find(d => d.dateTime === isoDateString);
       return {
-        dateTime: date.toISOString().split('T')[0],
-        value: dayData ? dayData.value : '0'  // Ensure value is a string
+        dateTime: isoDateString,
+        value: dayData ? dayData.value : '0' // Ensure value is a string
       };
     });
+
     return monthData;
   }
 
-  private getStartOfWeek(date: Date): Date {
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(date.setDate(diff));
-  }
 
   aggregateByMonth(data: ActivityTimeSeries[]): ActivityTimeSeries[] {
     if (data.length === 0) return [];
@@ -384,8 +479,6 @@ export class ActivityReportComponent implements OnChanges, OnInit {
         monthlyData[i].value = (parseFloat(monthlyData[i].value) / monthCounts[i]).toFixed(2);
       }
     }
-
-    console.log('Final monthlyData:', monthlyData); // Added for debugging
 
     return monthlyData;
   }

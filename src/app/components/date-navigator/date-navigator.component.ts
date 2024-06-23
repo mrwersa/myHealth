@@ -5,6 +5,7 @@ import { format, isToday as isTodayFn, subDays, addDays, subWeeks, addWeeks, sub
 import { addIcons } from 'ionicons';
 import { arrowBackCircle, arrowForwardCircle, home } from 'ionicons/icons';
 import { FormatService } from '../../services/format.service';
+import { LocaleService } from '../../services/locale.service';
 
 addIcons({
   'arrow-back-circle': arrowBackCircle,
@@ -20,13 +21,13 @@ addIcons({
   imports: [IonCardContent, IonCard, CommonModule, IonButton, IonIcon]
 })
 export class DateNavigatorComponent implements OnInit, OnChanges {
-  @Output() dateChange = new EventEmitter<string>();
+  @Output() dateChange = new EventEmitter<Date>();
   @Input() viewMode: 'day' | 'week' | 'month' | 'year' = 'day';
-  @Input() selectedDate: string = new Date().toISOString().split('T')[0];  // Use string type for selectedDate
+  @Input() selectedDate: Date = new Date();
 
   displayPeriod: string = '';
 
-  constructor(private formatService: FormatService) { }
+  constructor(private formatService: FormatService, private localeService: LocaleService) { }
 
   ngOnInit() {
     this.updateDisplayPeriod();
@@ -40,19 +41,17 @@ export class DateNavigatorComponent implements OnInit, OnChanges {
 
   previous() {
     if (this.canMoveBack()) {
-      let date = new Date(this.selectedDate);
-      this.selectedDate = this.getPreviousDate(date).toISOString().split('T')[0];
+      this.selectedDate = this.getPreviousDate(this.selectedDate);
       this.emitDateChange();
       this.updateDisplayPeriod();
     }
   }
 
   next() {
-    let date = new Date(this.selectedDate);
-    const newDate = this.getNextDate(date);
+    const newDate = this.getNextDate(this.selectedDate);
 
     if (!isFuture(newDate) && newDate <= new Date()) {
-      this.selectedDate = newDate.toISOString().split('T')[0];
+      this.selectedDate = newDate;
       this.emitDateChange();
       this.updateDisplayPeriod();
     }
@@ -89,27 +88,28 @@ export class DateNavigatorComponent implements OnInit, OnChanges {
   }
 
   canMoveBack(): boolean {
-    const date = new Date(this.selectedDate);
     const startOfCurrentMonth = startOfMonth(new Date());
     const startOfCurrentYear = startOfYear(new Date());
     const twoYearsAgo = startOfYear(subYears(new Date(), 2));
 
     switch (this.viewMode) {
       case 'day':
-        return startOfDay(date) > startOfCurrentMonth;
+        return startOfDay(this.selectedDate) > startOfCurrentMonth;
       case 'week':
-        return startOfWeek(date) > startOfCurrentMonth;
+        // Check if the start of the week is within the current month
+        const startOfCurrentWeek = startOfWeek(this.selectedDate, { weekStartsOn: 1 });
+        return startOfCurrentWeek >= startOfCurrentMonth;
       case 'month':
-        return startOfMonth(date) > startOfCurrentYear;
+        return startOfMonth(this.selectedDate) > startOfCurrentYear;
       case 'year':
-        return startOfYear(date) > twoYearsAgo;
+        return startOfYear(this.selectedDate) > twoYearsAgo;
       default:
         return true;
     }
   }
 
   goToCurrentPeriod() {
-    this.selectedDate = new Date().toISOString().split('T')[0];
+    this.selectedDate = new Date();
     this.emitDateChange();
     this.updateDisplayPeriod();
   }
@@ -135,8 +135,7 @@ export class DateNavigatorComponent implements OnInit, OnChanges {
   }
 
   updateDisplayPeriod() {
-    const date = new Date(this.selectedDate);
-    this.displayPeriod = this.formatService.getFormattedDisplayPeriod(date, this.viewMode);
+    this.displayPeriod = this.formatService.getFormattedDisplayPeriod(this.selectedDate, this.viewMode);
   }
 
   getTooltip(): string {

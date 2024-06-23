@@ -11,6 +11,7 @@ import { environment } from './environments/environment';
 // Register Chart.js components
 import { Chart, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
+import { LocaleService } from './app/services/locale.service';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -23,6 +24,7 @@ bootstrapApplication(AppComponent, {
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideIonicAngular(),
     provideRouter(routes, withPreloading(PreloadAllModules)),
-    provideHttpClient(withInterceptorsFromDi())
+    provideHttpClient(withInterceptorsFromDi()),
+    LocaleService
   ]
 });

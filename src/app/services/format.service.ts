@@ -59,7 +59,7 @@ export class FormatService {
         }
       case 'week':
         const startOfCurrentMonth = startOfMonth(date);
-        const weekNumber = differenceInCalendarWeeks(date, startOfCurrentMonth) + 1;
+        const weekNumber = differenceInCalendarWeeks(date, startOfCurrentMonth, { weekStartsOn: 1 }) + 1;
         if (isSameWeek(date, today, { weekStartsOn: 1 })) {
           return 'This Week';
         }
